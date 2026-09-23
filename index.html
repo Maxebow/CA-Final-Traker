@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ICAI CA Final Executive Study Center & Exam Command Engine</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .drag-chip { cursor: grab; }
+    .drag-chip:active { cursor: grabbing; }
+    .drop-target { transition: background-color 0.15s ease, border-color 0.15s ease; }
+    .drop-target.drag-over { border-color: #0284c7 !important; background-color: #f0f9ff !important; }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col font-sans">
+
+  <!-- TOP HEADER COUNTDOWN STRIP -->
+  <header class="bg-white border-b border-slate-200 px-6 py-3 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-30 shadow-sm">
+    <div>
+      <div class="flex items-center gap-3">
+        <h1 id="examTitleDisplay" class="text-lg font-bold text-slate-900 tracking-tight">CA Final Examination</h1>
+        <button onclick="openExamModal()" class="text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 px-2.5 py-1 rounded transition border border-slate-300">
+          ⚙ Edit Target Date
+        </button>
+      </div>
+      <p id="examTargetDisplay" class="text-xs text-slate-500 font-medium">Target: --</p>
+    </div>
+
+    <!-- Countdown Tiles -->
+    <div class="flex items-center gap-2">
+      <div class="bg-slate-50 border border-slate-200 rounded px-3 py-1 text-center min-w-[62px]">
+        <div id="tileDays" class="text-lg font-black text-sky-600">00</div>
+        <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Days</div>
+      </div>
+      <div class="bg-slate-50 border border-slate-200 rounded px-3 py-1 text-center min-w-[55px]">
+        <div id="tileHours" class="text-lg font-black text-sky-600">00</div>
+        <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Hours</div>
+      </div>
+      <div class="bg-slate-50 border border-slate-200 rounded px-3 py-1 text-center min-w-[55px]">
+        <div id="tileMins" class="text-lg font-black text-sky-600">00</div>
+        <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Mins</div>
+      </div>
+      <div class="bg-slate-50 border border-slate-200 rounded px-3 py-1 text-center min-w-[55px]">
+        <div id="tileSecs" class="text-lg font-black text-sky-600">00</div>
+        <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Secs</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- NAVIGATION TABS -->
+  <nav class="bg-white border-b border-slate-200 px-6 flex space-x-1 text-sm font-semibold overflow-x-auto">
+    <button onclick="switchTab('tab-cal')" id="btn-tab-cal" class="tab-btn px-4 py-3 border-b-2 border-sky-600 text-sky-600 whitespace-nowrap">🗓️ Visual Color Planner</button>
+    <button onclick="switchTab('tab-week')" id="btn-tab-week" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-600 hover:text-slate-900 whitespace-nowrap">⏱️ Weekly Timetable & Audit</button>
+    <button onclick="switchTab('tab-log')" id="btn-tab-log" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-600 hover:text-slate-900 whitespace-nowrap">📝 Daily Multi-Subject Logger</button>
+    <button onclick="switchTab('tab-fr')" id="btn-tab-fr" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-600 hover:text-slate-900 whitespace-nowrap">📚 FR 155-Lecture Console</button>
+    <button onclick="switchTab('tab-quota')" id="btn-tab-quota" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-600 hover:text-slate-900 whitespace-nowrap">📊 Workload & Exporters</button>
+  </nav>
+
+  <!-- WORKSPACE PANELS -->
+  <main class="flex-1 p-4 md:p-6 overflow-y-auto">
+
+    <!-- TAB 1: CALENDAR -->
+    <section id="tab-cal" class="tab-pane space-y-4">
+      <div class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
+        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Palette (Select Color Brush or Drag Color Chip onto Days):</span>
+        <div class="flex flex-wrap items-center gap-3" id="paletteChips"></div>
+      </div>
+
+      <div class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+          <button onclick="changeMonth(-1)" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-xs font-bold rounded text-slate-700">◀ Previous</button>
+          <h2 id="calendarMonthTitle" class="text-base font-bold text-slate-800">Month YYYY</h2>
+          <button onclick="changeMonth(1)" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-xs font-bold rounded text-slate-700">Next ▶</button>
+        </div>
+        <div class="grid grid-cols-7 gap-1 text-center font-bold text-xs text-slate-500 mb-1">
+          <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div>
+        </div>
+        <div id="calendarGrid" class="grid grid-cols-7 gap-1.5"></div>
+      </div>
+    </section>
+
+    <!-- TAB 2: WEEKLY TIMETABLE -->
+    <section id="tab-week" class="tab-pane hidden space-y-4">
+      <!-- Ribbon KPI & Stopwatch -->
+      <div class="bg-white border border-slate-200 rounded-lg p-3 shadow-sm flex flex-wrap items-center justify-between gap-4">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 flex-1">
+          <div class="bg-slate-50 border border-slate-200 p-2 rounded">
+            <span class="text-[10px] font-bold text-slate-500 block">TARGET PLANNED</span>
+            <span id="kpiPlanned" class="text-sm font-bold text-slate-900">0.0 hrs</span>
+          </div>
+          <div class="bg-slate-50 border border-slate-200 p-2 rounded">
+            <span class="text-[10px] font-bold text-slate-500 block">ACTUAL STUDIED</span>
+            <span id="kpiActual" class="text-sm font-bold text-sky-600">0.0 hrs</span>
+          </div>
+          <div class="bg-slate-50 border border-slate-200 p-2 rounded">
+            <span class="text-[10px] font-bold text-slate-500 block">VARIANCE GAP</span>
+            <span id="kpiVariance" class="text-sm font-bold text-slate-700">0.0 hrs</span>
+          </div>
+          <div class="bg-slate-50 border border-slate-200 p-2 rounded">
+            <span class="text-[10px] font-bold text-slate-500 block">PRODUCTIVITY</span>
+            <span id="kpiEff" class="text-sm font-bold text-emerald-600">0.0 %</span>
+          </div>
+        </div>
+
+        <div class="bg-slate-900 text-white rounded-lg p-2.5 px-4 flex items-center gap-4">
+          <div>
+            <div class="text-[9px] font-bold text-slate-400">STUDY STOPWATCH</div>
+            <div id="stopwatchDisplay" class="font-mono text-base font-bold text-sky-400">00:00:00</div>
+          </div>
+          <button id="btnStopwatch" onclick="toggleStopwatch()" class="px-3 py-1.5 text-xs font-bold rounded bg-sky-500 hover:bg-sky-400 text-slate-900 transition">
+            ▶ Start Session
+          </button>
+        </div>
+      </div>
+
+      <!-- Timetable Layout -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <div class="lg:col-span-3 bg-white border border-slate-200 rounded-lg p-3 shadow-sm space-y-2">
+          <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Drag Course Module:</h3>
+          <p class="text-[11px] text-slate-500">Drag a subject box into any calendar slot. Click slot to set as active stopwatch destination.</p>
+          <div id="subjectModulesContainer" class="space-y-2 pt-2"></div>
+        </div>
+
+        <div class="lg:col-span-9 bg-white border border-slate-200 rounded-lg p-3 shadow-sm overflow-x-auto">
+          <div id="timetableMatrix" class="min-w-[700px] border border-slate-200 rounded text-xs"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: DAILY LOGGER -->
+    <section id="tab-log" class="tab-pane hidden space-y-4">
+      <div class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <h3 id="loggerModeTitle" class="text-sm font-bold text-slate-900">Log Lecture Minutes by Subject</h3>
+          <div class="flex items-center gap-2">
+            <label class="text-xs font-bold text-slate-600">Date:</label>
+            <input type="date" id="logDateInput" class="border border-slate-300 rounded px-2 py-1 text-xs font-semibold">
+            <button onclick="setLogToday()" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-xs font-semibold rounded">Today</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-4">
+          <div>
+            <label class="text-[11px] font-bold text-slate-600 block mb-1">FR (mins)</label>
+            <input type="number" id="in_FR" class="w-full border border-slate-300 rounded p-1.5 text-xs text-center" min="0" placeholder="0">
+          </div>
+          <div>
+            <label class="text-[11px] font-bold text-slate-600 block mb-1">AFM (mins)</label>
+            <input type="number" id="in_AFM" class="w-full border border-slate-300 rounded p-1.5 text-xs text-center" min="0" placeholder="0">
+          </div>
+          <div>
+            <label class="text-[11px] font-bold text-slate-600 block mb-1">AUDIT (mins)</label>
+            <input type="number" id="in_AUDIT" class="w-full border border-slate-300 rounded p-1.5 text-xs text-center" min="0" placeholder="0">
+          </div>
+          <div>
+            <label class="text-[11px] font-bold text-slate-600 block mb-1">TAX (mins)</label>
+            <input type="number" id="in_TAX" class="w-full border border-slate-300 rounded p-1.5 text-xs text-center" min="0" placeholder="0">
+          </div>
+          <div>
+            <label class="text-[11px] font-bold text-slate-600 block mb-1">GST (mins)</label>
+            <input type="number" id="in_GST" class="w-full border border-slate-300 rounded p-1.5 text-xs text-center" min="0" placeholder="0">
+          </div>
+          <div>
+            <label class="text-[11px] font-bold text-slate-600 block mb-1">SET A (mins)</label>
+            <input type="number" id="in_SETA" class="w-full border border-slate-300 rounded p-1.5 text-xs text-center" min="0" placeholder="0">
+          </div>
+          <div>
+            <label class="text-[11px] font-bold text-slate-600 block mb-1">SET B (mins)</label>
+            <input type="number" id="in_SETB" class="w-full border border-slate-300 rounded p-1.5 text-xs text-center" min="0" placeholder="0">
+          </div>
+        </div>
+
+        <div class="flex gap-2">
+          <button onclick="commitLogEntry()" id="btnSaveLog" class="flex-1 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded transition">
+            COMMIT LOG ENTRY
+          </button>
+          <button onclick="cancelLogEdit()" id="btnCancelEdit" class="hidden px-4 py-2 bg-slate-400 hover:bg-slate-500 text-white font-bold text-xs rounded transition">
+            Cancel Edit
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
+        <h4 class="text-xs font-bold text-emerald-700 mb-2 uppercase">Day-Wise Aggregate Log (Click row to edit)</h4>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left border-collapse">
+            <thead class="bg-slate-50 text-slate-600 border-b border-slate-200">
+              <tr>
+                <th class="p-2.5">Date</th>
+                <th class="p-2.5">Total (Hours)</th>
+                <th class="p-2.5">Total (Mins)</th>
+                <th class="p-2.5">Breakdown</th>
+                <th class="p-2.5 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody id="loggerTableBody" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: FR SYLLABUS -->
+    <section id="tab-fr" class="tab-pane hidden space-y-4">
+      <div class="bg-white border border-slate-200 rounded-lg p-3 shadow-sm flex flex-wrap items-center justify-between gap-3">
+        <div id="frSummaryStats" class="text-xs font-bold text-sky-700">Loading metrics...</div>
+        <div class="flex items-center gap-2">
+          <label class="text-xs font-bold text-slate-500">Filter Group:</label>
+          <select id="frFilterSelect" onchange="renderFRTable()" class="border border-slate-300 rounded px-2 py-1 text-xs">
+            <option value="All">All Sets</option>
+            <option value="Part 1 - Set A">Part 1 - Set A</option>
+            <option value="Part 1 - Set B">Part 1 - Set B</option>
+            <option value="Part 1 - Set C">Part 1 - Set C</option>
+            <option value="Part 1 - Set D">Part 1 - Set D</option>
+            <option value="Part 2 - Set A">Part 2 - Set A</option>
+            <option value="Part 2 - Set B">Part 2 - Set B</option>
+            <option value="Part 2 - Set C">Part 2 - Set C</option>
+            <option value="Part 2 - Set D">Part 2 - Set D</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <div class="lg:col-span-8 bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden flex flex-col max-h-[620px]">
+          <div class="overflow-y-auto flex-1">
+            <table class="w-full text-xs text-left">
+              <thead class="bg-slate-50 text-slate-600 sticky top-0 border-b border-slate-200">
+                <tr>
+                  <th class="p-2 text-center">#</th>
+                  <th class="p-2">Lecture Standard / Topic</th>
+                  <th class="p-2">Group</th>
+                  <th class="p-2 text-center">Watched Date</th>
+                  <th class="p-2 text-center">Mins</th>
+                  <th class="p-2 text-center">Done</th>
+                  <th class="p-2 text-center">R1</th>
+                  <th class="p-2 text-center">R2</th>
+                  <th class="p-2 text-center">R3</th>
+                </tr>
+              </thead>
+              <tbody id="frTableBody" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Right Side Editor -->
+        <div class="lg:col-span-4 bg-white border border-slate-200 rounded-lg p-4 shadow-sm flex flex-col justify-between">
+          <div class="space-y-3">
+            <h4 class="text-xs font-bold text-sky-600 uppercase tracking-wider">Lecture Workbench</h4>
+            <div id="frActiveTitle" class="text-xs font-bold text-slate-800 border-b pb-2">Select a lecture from the table</div>
+
+            <div>
+              <label class="text-[11px] font-bold text-slate-500 block mb-1">Watch Date (YYYY-MM-DD):</label>
+              <div class="flex gap-2">
+                <input type="date" id="frEntryDate" class="border border-slate-300 rounded px-2 py-1 text-xs flex-1">
+                <button onclick="setFRToday()" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-xs font-bold rounded text-slate-700">Today</button>
+              </div>
+            </div>
+
+            <div>
+              <label class="text-[11px] font-bold text-slate-500 block mb-1">Watch Duration (Minutes):</label>
+              <input type="number" id="frEntryMins" class="border border-slate-300 rounded p-1.5 text-xs w-full" min="0" placeholder="0">
+            </div>
+
+            <div>
+              <label class="text-[11px] font-bold text-slate-500 block mb-1">Revision Status:</label>
+              <div class="flex items-center gap-3 text-xs font-bold">
+                <label class="flex items-center gap-1 text-sky-600"><input type="checkbox" id="frChkDone"> Watched</label>
+                <label class="flex items-center gap-1 text-amber-600"><input type="checkbox" id="frChkR1"> R1</label>
+                <label class="flex items-center gap-1 text-orange-600"><input type="checkbox" id="frChkR2"> R2</label>
+                <label class="flex items-center gap-1 text-emerald-600"><input type="checkbox" id="frChkR3"> R3</label>
+              </div>
+            </div>
+
+            <div>
+              <label class="text-[11px] font-bold text-slate-500 block mb-1">Study Notes / Standard Keypoints:</label>
+              <textarea id="frEntryNotes" rows="4" class="w-full border border-slate-300 rounded p-2 text-xs" placeholder="Add key points..."></textarea>
+            </div>
+          </div>
+
+          <button onclick="saveActiveLecture()" class="w-full py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded transition mt-4">
+            SAVE LECTURE PROGRESS
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: QUOTA & EXPORTERS -->
+    <section id="tab-quota" class="tab-pane hidden space-y-4">
+      <div class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm max-w-2xl mx-auto space-y-4">
+        <h3 class="text-sm font-bold text-sky-700">Curriculum Quotas & Dynamic Schedule Generation</h3>
+        
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="text-xs font-bold text-slate-600 block mb-1">Start Date:</label>
+            <input type="date" id="quotaStart" value="2026-09-15" class="w-full border border-slate-300 rounded p-1.5 text-xs">
+          </div>
+          <div>
+            <label class="text-xs font-bold text-slate-600 block mb-1">Target End Date:</label>
+            <input type="date" id="quotaEnd" value="2026-12-31" class="w-full border border-slate-300 rounded p-1.5 text-xs">
+          </div>
+        </div>
+
+        <div class="border border-slate-200 rounded p-3 bg-slate-50 space-y-2">
+          <span class="text-xs font-bold text-slate-700 block mb-1">Subject Target Quotas (Hours):</span>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+            <div><label class="text-[11px] font-semibold">Audit (hrs):</label><input id="q_Audit" type="number" value="165" class="w-full border rounded p-1"></div>
+            <div><label class="text-[11px] font-semibold">AFM (hrs):</label><input id="q_AFM" type="number" value="190" class="w-full border rounded p-1"></div>
+            <div><label class="text-[11px] font-semibold">FR (hrs):</label><input id="q_FR" type="number" value="425" class="w-full border rounded p-1"></div>
+            <div><label class="text-[11px] font-semibold">DT (hrs):</label><input id="q_DT" type="number" value="260" class="w-full border rounded p-1"></div>
+            <div><label class="text-[11px] font-semibold">IDT (hrs):</label><input id="q_IDT" type="number" value="140" class="w-full border rounded p-1"></div>
+          </div>
+        </div>
+
+        <div id="quotaSummaryBox" class="p-3 rounded bg-sky-50 border border-sky-200 text-xs text-sky-800 italic">
+          💡 Click 'Calculate Workload' to audit study pace requirements.
+        </div>
+
+        <div class="flex flex-wrap gap-2 pt-2">
+          <button onclick="calculateQuota()" class="flex-1 py-2 px-3 bg-slate-700 hover:bg-slate-800 text-white font-bold text-xs rounded transition">
+            📊 Calculate Pace
+          </button>
+          <button onclick="exportCSV()" class="flex-1 py-2 px-3 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded transition">
+            📥 Export CSV Matrix
+          </button>
+          <button onclick="window.print()" class="flex-1 py-2 px-3 bg-rose-700 hover:bg-rose-800 text-white font-bold text-xs rounded transition">
+            📑 Print / Save PDF
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL: EXAM TARGET SETTINGS -->
+  <div id="examModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-lg p-5 max-w-sm w-full space-y-3 shadow-xl">
+      <h3 class="text-sm font-bold text-slate-800">Configure Target Exam Goal</h3>
+      <div>
+        <label class="text-xs font-semibold text-slate-600 block mb-1">Exam / Goal Title:</label>
+        <input type="text" id="modalExamName" class="w-full border border-slate-300 rounded p-1.5 text-xs">
+      </div>
+      <div>
+        <label class="text-xs font-semibold text-slate-600 block mb-1">Target Date & Time:</label>
+        <input type="datetime-local" id="modalExamDate" class="w-full border border-slate-300 rounded p-1.5 text-xs">
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeExamModal()" class="px-3 py-1.5 text-xs font-semibold rounded bg-slate-100 hover:bg-slate-200">Cancel</button>
+        <button onclick="saveExamTarget()" class="px-3 py-1.5 text-xs font-semibold rounded bg-sky-600 text-white hover:bg-sky-700">Save Target</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPT ENGINE -->
+  <script>
+    // ----------------------------------------------------
+    // DATA CONSTANTS & INITIAL STATE
+    // ----------------------------------------------------
+    const PALETTE = [
+      { hex: "#D1FAE5", label: "Sage" },
+      { hex: "#E0F2FE", label: "Sky" },
+      { hex: "#FEF3C7", label: "Butter" },
+      { hex: "#FFE4E6", label: "Rose" },
+      { hex: "#EDE9FE", label: "Lavender" },
+      { hex: "#FFEDD5", label: "Peach" },
+      { hex: "#FFFFFF", label: "Clear" }
+    ];
+
+    const SUBJECT_MODULES = [
+      { code: "1. FR", name: "Financial Reporting", bg: "#E0F2FE", fg: "#0369A1", bd: "#7DD3FC" },
+      { code: "2. AFM", name: "Adv. Financial Mgmt", bg: "#DCFCE7", fg: "#15803D", bd: "#86EFAC" },
+      { code: "3. AUDIT", name: "Adv. Auditing & Ethics", bg: "#FEF3C7", fg: "#B45309", bd: "#FDE68A" },
+      { code: "4. DT", name: "Direct Tax & Int'l Tax", bg: "#FEE2E2", fg: "#B91C1C", bd: "#FCA5A5" },
+      { code: "5. IDT", name: "Goods & Services Tax", bg: "#F3E8FF", fg: "#7E22CE", bd: "#D8B4FE" },
+      { code: "SET A. LAW", name: "Corp & Economic Laws", bg: "#CFFAFE", fg: "#0E7490", bd: "#67E8F9" },
+      { code: "SET B. COST", name: "Strategic Cost Mgmt", bg: "#FCE7F3", fg: "#BE185D", bd: "#F9A8D4" }
+    ];
+
+    const WEEKLY_SLOTS = [
+      { id: "S1", label: "06:00 - 08:30 AM", hours: 2.5, tag: "Dawn Theory" },
+      { id: "S2", label: "09:00 - 12:00 PM", hours: 3.0, tag: "Core Analytical" },
+      { id: "S3", label: "02:00 - 06:00 PM", hours: 4.0, tag: "Heavy Practical" },
+      { id: "S4", label: "07:00 - 10:00 PM", hours: 3.0, tag: "Night Retention" }
+    ];
+
+    const WEEK_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+    // 155 LECTURE FR SYLLABUS DATASET
+    const FR_RAW = [
+      [1,"Professional And Ethical Duties Of Chartered Accountant","Part 1 - Set A"],
+      [2,"LV01_FR_Accounting And Technology","Part 1 - Set A"],[3,"LV01_FR_Application Of IND AS","Part 1 - Set A"],
+      [4,"LV01_FR_Conceptual Framework","Part 1 - Set A"],[5,"LV01_FR_Financial Instruments","Part 1 - Set A"],
+      [6,"LV02_FR_Financial Instruments","Part 1 - Set A"],[7,"LV03_FR_Financial Instruments","Part 1 - Set A"],
+      [8,"LV04_FR_Financial Instruments","Part 1 - Set A"],[9,"LV05_FR_Financial Instruments","Part 1 - Set A"],
+      [10,"LV06_FR_Financial Instruments","Part 1 - Set A"],[11,"LV07_FR_Financial Instruments","Part 1 - Set A"],
+      [12,"LV08_FR_Financial Instruments","Part 1 - Set A"],[13,"LV09_FR_Financial Instruments","Part 1 - Set A"],
+      [14,"LV10_FR_Financial Instruments","Part 1 - Set A"],[15,"LV11_FR_Financial Instruments","Part 1 - Set A"],
+      [16,"LV12_FR_Financial Instruments","Part 1 - Set A"],[17,"LV13_FR_Financial Instruments","Part 1 - Set A"],
+      [18,"LV14_FR_Financial Instruments","Part 1 - Set A"],[19,"LV15_FR_Financial Instruments","Part 1 - Set A"],
+      [20,"LV16_FR_Financial Instruments","Part 1 - Set A"],[21,"LV17_FR_Financial Instruments","Part 1 - Set B"],
+      [22,"LV18_FR_Financial Instruments","Part 1 - Set B"],[23,"LV19_FR_Financial Instruments","Part 1 - Set B"],
+      [24,"LV20_FR_Financial Instruments","Part 1 - Set B"],[25,"LV21A_FR_Financial Instruments","Part 1 - Set B"],
+      [26,"LV21B_FR_Financial Instruments","Part 1 - Set B"],[27,"LV22_FR_Schedule III","Part 1 - Set B"],
+      [28,"LV23_FR_Schedule III","Part 1 - Set B"],[29,"LV24_FR_Schedule III","Part 1 - Set B"],
+      [30,"LV25_FR_Schedule III","Part 1 - Set B"],[31,"LV26_FR_IND AS 1","Part 1 - Set B"],
+      [32,"LV27_FR_IND AS 1","Part 1 - Set B"],[33,"LV28A_FR_IND AS 1","Part 1 - Set B"],
+      [34,"LV28B_FR_IND AS 1","Part 1 - Set B"],[35,"LV29_FR_IND AS 33","Part 1 - Set B"],
+      [36,"LV30_FR_IND AS 33","Part 1 - Set B"],[37,"LV31_FR_IND AS 33","Part 1 - Set B"],
+      [38,"LV32_FR_IND AS 33","Part 1 - Set B"],[39,"LV33_FR_IND AS 33","Part 1 - Set B"],
+      [40,"LV34_FR_IND AS 33","Part 1 - Set B"],[41,"LV35_FR_IND AS 33","Part 1 - Set C"],
+      [42,"LV36_FR_IND AS 102","Part 1 - Set C"],[43,"LV37_FR_IND AS 102","Part 1 - Set C"],
+      [44,"LV38_FR_IND AS 102","Part 1 - Set C"],[45,"LV39_FR_IND AS 102","Part 1 - Set C"],
+      [46,"LV40_FR_IND AS 102","Part 1 - Set C"],[47,"LV41A_FR_IND AS 102","Part 1 - Set C"],
+      [48,"LV41B_FR_IND AS 102","Part 1 - Set C"],[49,"LV42_FR_IND AS 19","Part 1 - Set C"],
+      [50,"LV43_FR_IND AS 19","Part 1 - Set C"],[51,"LV44_FR_IND AS 19","Part 1 - Set C"],
+      [52,"LV45_FR_IND AS 19","Part 1 - Set C"],[53,"LV46_FR_IND AS 19","Part 1 - Set C"],
+      [54,"LV47_FR_IND AS 19","Part 1 - Set C"],[55,"LV48_FR_IND AS 113","Part 1 - Set C"],
+      [56,"LV49_FR_IND AS 113","Part 1 - Set C"],[57,"LV50_FR_IND AS 115","Part 1 - Set C"],
+      [58,"LV51_FR_IND AS 115","Part 1 - Set C"],[59,"LV52_FR_IND AS 115","Part 1 - Set C"],
+      [60,"LV53_FR_IND AS 115","Part 1 - Set D"],[61,"LV54A_FR_IND AS 115","Part 1 - Set D"],
+      [62,"LV54B_FR_IND AS 115 Homework Session 1","Part 1 - Set D"],[63,"LV55_FR_IND AS 115","Part 1 - Set D"],
+      [64,"LV56_FR_IND AS 115","Part 1 - Set D"],[65,"LV57A_FR_IND AS 115","Part 1 - Set D"],
+      [66,"LV57B_FR_IND AS 115_Revision & Homework Session 2","Part 1 - Set D"],
+      [67,"LV57C_FR_IND AS 15 Homework Session 3","Part 1 - Set D"],[68,"LV58_FR_IND AS 116","Part 1 - Set D"],
+      [69,"LV59_FR_IND AS 116","Part 1 - Set D"],[70,"LV60_FR_IND AS 116","Part 1 - Set D"],
+      [71,"LV61_FR_IND AS 116","Part 1 - Set D"],[72,"LV62_FR_IND AS 116","Part 1 - Set D"],
+      [73,"LV63_FR_IND AS 116","Part 1 - Set D"],[74,"LV64_FR_IND AS 116","Part 1 - Set D"],
+      [75,"LV65_FR_IND AS 116","Part 1 - Set D"],[76,"LV66_FR_IND AS 116","Part 1 - Set D"],
+      [77,"LV67_FR_IND AS 116","Part 1 - Set D"],[78,"LV68_FR_IND AS 16","Part 1 - Set D"],
+      [79,"LV69_FR_IND AS 16","Part 2 - Set A"],[80,"LV70_FR_IND AS 16","Part 2 - Set A"],
+      [81,"LV71_FR_IND AS 16","Part 2 - Set A"],[82,"LV72A_FR_IND AS 16","Part 2 - Set A"],
+      [83,"LV72B_FR_IND AS 16 Homework and Query Session","Part 2 - Set A"],
+      [84,"LV73_FR_IND AS 105","Part 2 - Set A"],[85,"LV74_FR_IND AS 105","Part 2 - Set A"],
+      [86,"LV75_FR_IND AS 40","Part 2 - Set A"],[87,"LV76_FR_IND AS 41","Part 2 - Set A"],
+      [88,"LV77_FR_IND AS 41","Part 2 - Set A"],[89,"LV78_FR_IND AS 103","Part 2 - Set A"],
+      [90,"LV79_FR_IND AS 103","Part 2 - Set A"],[91,"LV80_FR_IND AS 103","Part 2 - Set A"],
+      [92,"LV81_FR_IND AS 103","Part 2 - Set A"],[93,"LV82_FR_IND AS 103","Part 2 - Set A"],
+      [94,"LV83_FR_IND AS 103","Part 2 - Set A"],[95,"LV84_FR_IND AS 103","Part 2 - Set A"],
+      [96,"LV85_FR_IND AS 103","Part 2 - Set A"],[97,"LV86_FR_IND AS 103","Part 2 - Set A"],
+      [98,"LV87_FR_IND AS 103","Part 2 - Set A"],[99,"LV88_FR_IND AS 27","Part 2 - Set B"],
+      [100,"LV89A_FR_IND AS 110","Part 2 - Set B"],[101,"LV89B_FR_IND AS 110","Part 2 - Set B"],
+      [102,"LV90_FR_IND AS 110","Part 2 - Set B"],[103,"LV91_FR_IND AS 110","Part 2 - Set B"],
+      [104,"LV92A_FR_IND AS 110","Part 2 - Set B"],[105,"LV92B_FR_IND AS 110 Homework Session","Part 2 - Set B"],
+      [106,"LV93_FR_IND AS 110","Part 2 - Set B"],[107,"LV94_FR_IND AS 110","Part 2 - Set B"],
+      [108,"LV95_FR_IND AS 110","Part 2 - Set B"],[109,"LV96_FR_IND AS 110","Part 2 - Set B"],
+      [110,"LV97_FR_IND AS 110","Part 2 - Set B"],[111,"LV98_FR_IND AS 28","Part 2 - Set B"],
+      [112,"LV99_FR_IND AS 28","Part 2 - Set B"],[113,"LV100_FR_IND AS 28","Part 2 - Set B"],
+      [114,"LV101A_FR_IND AS 111 And 112","Part 2 - Set B"],[115,"LV101B_FR_IND AS 112","Part 2 - Set B"],
+      [116,"LV102_FR_IND AS 21","Part 2 - Set B"],[117,"LV103_FR_IND AS 21","Part 2 - Set B"],
+      [118,"LV104_FR_IND AS 21","Part 2 - Set C"],[119,"LV105_FR_IND AS 24","Part 2 - Set C"],
+      [120,"LV106_FR_IND AS 20","Part 2 - Set C"],[121,"LV107A_FR_IND AS 108","Part 2 - Set C"],
+      [122,"LV107B_FR_IND AS 108","Part 2 - Set C"],[123,"LV108A_FR_IND AS 34","Part 2 - Set C"],
+      [124,"LV108B_FR_IND AS 34","Part 2 - Set C"],[125,"LV109_FR_IND AS 34","Part 2 - Set C"],
+      [126,"LV110A_FR_IND AS 37","Part 2 - Set C"],[127,"LV110B_FR_IND AS 37","Part 2 - Set C"],
+      [128,"LV111A_FR_IND AS 38","Part 2 - Set C"],[129,"LV111B_FR_IND AS 38","Part 2 - Set C"],
+      [130,"LV112_FR_IND AS 38","Part 2 - Set C"],[131,"LV113_FR_IND AS 2","Part 2 - Set C"],
+      [132,"LV114_FR_IND AS 2","Part 2 - Set C"],[133,"LV115A_FR_IND AS 7","Part 2 - Set C"],
+      [134,"LV115B_FR_IND AS 7","Part 2 - Set C"],[135,"LV116_FR_IND AS 7","Part 2 - Set C"],
+      [136,"LV117_FR_IND AS 7","Part 2 - Set C"],[137,"LV118A_FR_IND AS 8","Part 2 - Set D"],
+      [138,"LV118B_FR_IND AS 8","Part 2 - Set D"],[139,"LV119_FR_IND AS 8","Part 2 - Set D"],
+      [140,"LV120A_FR_IND AS 10","Part 2 - Set D"],[141,"LV120B_FR_IND AS 10","Part 2 - Set D"],
+      [142,"LV121AB_FR_IND AS 23","Part 2 - Set D"],[143,"LV122_FR_IND AS 23","Part 2 - Set D"],
+      [144,"LV123_FR_IND AS 23","Part 2 - Set D"],[145,"LV124_FR_IND AS 101","Part 2 - Set D"],
+      [146,"LV125_FR_IND AS 101","Part 2 - Set D"],[147,"LV126A_FR_IND AS 36","Part 2 - Set D"],
+      [148,"LV126B_FR_IND AS 36","Part 2 - Set D"],[149,"LV127_FR_IND AS 36","Part 2 - Set D"],
+      [150,"LV128_FR_IND AS 36","Part 2 - Set D"],[151,"LV129_FR_IND AS 36","Part 2 - Set D"],
+      [152,"LV130_FR_IND AS 12","Part 2 - Set D"],[153,"LV131_FR_IND AS 12","Part 2 - Set D"],
+      [154,"LV132_FR_IND AS 12","Part 2 - Set D"],[155,"LV133_FR_IND AS 12","Part 2 - Set D"]
+    ];
+
+    // LocalStorage State Controllers
+    let examSettings = JSON.parse(localStorage.getItem("ca_exam_settings")) || {
+      name: "CA Final Examination",
+      target: new Date(Date.now() + 60 * 24 * 3600 * 1000).toISOString().slice(0, 16)
+    };
+
+    let calendarColors = JSON.parse(localStorage.getItem("ca_cal_colors")) || {};
+    let activePaintbrush = PALETTE[0].hex;
+
+    let weeklySchedule = JSON.parse(localStorage.getItem("ca_weekly_vault")) || {};
+    WEEK_DAYS.forEach(d => {
+      if (!weeklySchedule[d]) weeklySchedule[d] = {};
+      WEEKLY_SLOTS.forEach(s => {
+        if (!weeklySchedule[d][s.label]) weeklySchedule[d][s.label] = null;
+      });
+    });
+
+    let subjectLogs = JSON.parse(localStorage.getItem("ca_subject_logs")) || [];
+    let frData = JSON.parse(localStorage.getItem("ca_fr_data")) || {};
+
+    // Populate initial FR state if absent
+    FR_RAW.forEach(([num, title, group]) => {
+      const k = String(num);
+      if (!frData[k]) {
+        frData[k] = { num, title, group, watched: false, watch_date: "", watch_minutes: 0, rev1: false, rev2: false, rev3: false, note: "" };
+      }
+    });
+
+    // ----------------------------------------------------
+    // INITIALIZATION & TAB SWITCHING
+    // ----------------------------------------------------
+    window.addEventListener("DOMContentLoaded", () => {
+      updateExamHeader();
+      setInterval(updateCountdownTicker, 1000);
+      initCalendarPalette();
+      renderCalendar();
+      initWeeklyTimetable();
+      renderLogTable();
+      setLogToday();
+      renderFRTable();
+      updateFRStats();
+    });
+
+    function switchTab(tabId) {
+      document.querySelectorAll(".tab-pane").forEach(el => el.classList.add("hidden"));
+      document.querySelectorAll(".tab-btn").forEach(el => {
+        el.classList.remove("border-sky-600", "text-sky-600");
+        el.classList.add("border-transparent", "text-slate-600");
+      });
+      document.getElementById(tabId).classList.remove("hidden");
+      const activeBtn = document.getElementById("btn-" + tabId);
+      activeBtn.classList.add("border-sky-600", "text-sky-600");
+      activeBtn.classList.remove("border-transparent", "text-slate-600");
+    }
+
+    // ----------------------------------------------------
+    // 1. COUNTDOWN HEADER ENGINE
+    // ----------------------------------------------------
+    function updateExamHeader() {
+      document.getElementById("examTitleDisplay").innerText = examSettings.name;
+      document.getElementById("examTargetDisplay").innerText = "Target: " + examSettings.target.replace("T", " ");
+    }
+
+    function updateCountdownTicker() {
+      const targetTime = new Date(examSettings.target).getTime();
+      const now = new Date().getTime();
+      const diff = targetTime - now;
+
+      if (diff <= 0) {
+        document.getElementById("tileDays").innerText = "00";
+        document.getElementById("tileHours").innerText = "00";
+        document.getElementById("tileMins").innerText = "00";
+        document.getElementById("tileSecs").innerText = "00";
+        return;
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const secs = Math.floor((diff % (1000 * 60)) / 1000);
+
+      document.getElementById("tileDays").innerText = String(days).padStart(2, '0');
+      document.getElementById("tileHours").innerText = String(hours).padStart(2, '0');
+      document.getElementById("tileMins").innerText = String(mins).padStart(2, '0');
+      document.getElementById("tileSecs").innerText = String(secs).padStart(2, '0');
+    }
+
+    function openExamModal() {
+      document.getElementById("modalExamName").value = examSettings.name;
+      document.getElementById("modalExamDate").value = examSettings.target;
+      document.getElementById("examModal").classList.remove("hidden");
+    }
+
+    function closeExamModal() {
+      document.getElementById("examModal").classList.add("hidden");
+    }
+
+    function saveExamTarget() {
+      const nm = document.getElementById("modalExamName").value.trim() || "CA Final Examination";
+      const dt = document.getElementById("modalExamDate").value;
+      if (!dt) return alert("Select a valid date");
+      examSettings = { name: nm, target: dt };
+      localStorage.setItem("ca_exam_settings", JSON.stringify(examSettings));
+      updateExamHeader();
+      renderCalendar();
+      closeExamModal();
+    }
+
+    // ----------------------------------------------------
+    // 2. VISUAL COLOR CALENDAR
+    // ----------------------------------------------------
+    let currentCalDate = new Date();
+
+    function initCalendarPalette() {
+      const cont = document.getElementById("paletteChips");
+      cont.innerHTML = "";
+      PALETTE.forEach(p => {
+        const item = document.createElement("div");
+        item.className = "flex items-center gap-1.5 cursor-pointer border border-slate-300 rounded px-2 py-1 drag-chip hover:shadow-sm";
+        item.style.backgroundColor = p.hex;
+        item.draggable = true;
+        item.innerHTML = `<span class="text-xs font-bold text-slate-700">${p.label}</span>`;
+        item.onclick = () => {
+          activePaintbrush = p.hex;
+          document.querySelectorAll("#paletteChips > div").forEach(d => d.classList.remove("ring-2", "ring-sky-500"));
+          item.classList.add("ring-2", "ring-sky-500");
+        };
+        item.ondragstart = (e) => {
+          e.dataTransfer.setData("color", p.hex);
+        };
+        cont.appendChild(item);
+      });
+      cont.firstChild.classList.add("ring-2", "ring-sky-500");
+    }
+
+    function changeMonth(delta) {
+      currentCalDate.setMonth(currentCalDate.getMonth() + delta);
+      renderCalendar();
+    }
+
+    function renderCalendar() {
+      const year = currentCalDate.getFullYear();
+      const month = currentCalDate.getMonth();
+      const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      document.getElementById("calendarMonthTitle").innerText = `${monthNames[month]} ${year}`;
+
+      const grid = document.getElementById("calendarGrid");
+      grid.innerHTML = "";
+
+      const firstDayIdx = (new Date(year, month, 1).getDay() + 6) % 7; // Align Monday to index 0
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      for (let i = 0; i < firstDayIdx; i++) {
+        const blank = document.createElement("div");
+        blank.className = "h-20 bg-slate-50/50 rounded border border-transparent";
+        grid.appendChild(blank);
+      }
+
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const examStr = examSettings.target.slice(0, 10);
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const dayCell = document.createElement("div");
+        const isToday = dateKey === todayStr;
+        const isExam = dateKey === examStr;
+        const assignedColor = calendarColors[dateKey] || "#FFFFFF";
+
+        dayCell.className = `h-20 p-1.5 rounded border flex flex-col justify-between text-xs cursor-pointer drop-target ${
+          isExam ? "border-sky-600 ring-2 ring-sky-400 font-bold" : (isToday ? "border-amber-500 ring-1 ring-amber-400 font-bold" : "border-slate-200")
+        }`;
+        dayCell.style.backgroundColor = assignedColor;
+
+        dayCell.innerHTML = `
+          <div class="flex justify-between items-start">
+            <span class="text-slate-800 font-bold">${d}</span>
+            ${isExam ? '<span class="text-[9px] bg-sky-600 text-white px-1 rounded">EXAM</span>' : ''}
+            ${isToday ? '<span class="text-[9px] bg-amber-500 text-white px-1 rounded">Today</span>' : ''}
+          </div>
+        `;
+
+        dayCell.onclick = () => {
+          if (activePaintbrush === "#FFFFFF") {
+            delete calendarColors[dateKey];
+          } else {
+            calendarColors[dateKey] = activePaintbrush;
+          }
+          localStorage.setItem("ca_cal_colors", JSON.stringify(calendarColors));
+          renderCalendar();
+        };
+
+        dayCell.ondragover = (e) => { e.preventDefault(); dayCell.classList.add("drag-over"); };
+        dayCell.ondragleave = () => dayCell.classList.remove("drag-over");
+        dayCell.ondrop = (e) => {
+          e.preventDefault();
+          dayCell.classList.remove("drag-over");
+          const col = e.dataTransfer.getData("color");
+          if (col) {
+            if (col === "#FFFFFF") delete calendarColors[dateKey];
+            else calendarColors[dateKey] = col;
+            localStorage.setItem("ca_cal_colors", JSON.stringify(calendarColors));
+            renderCalendar();
+          }
+        };
+
+        grid.appendChild(dayCell);
+      }
+    }
+
+    // ----------------------------------------------------
+    // 3. WEEKLY TIMETABLE & STOPWATCH
+    // ----------------------------------------------------
+    let timerRunning = false;
+    let timerInterval = null;
+    let timerSeconds = 0;
+    let activeSlot = null; // { day, slot }
+
+    function initWeeklyTimetable() {
+      // Course modules
+      const modContainer = document.getElementById("subjectModulesContainer");
+      modContainer.innerHTML = "";
+      SUBJECT_MODULES.forEach(sub => {
+        const card = document.createElement("div");
+        card.className = "p-2 rounded border drag-chip flex flex-col";
+        card.style.backgroundColor = sub.bg;
+        card.style.borderColor = sub.bd;
+        card.draggable = true;
+        card.innerHTML = `
+          <span class="font-bold text-xs" style="color:${sub.fg}">${sub.code}</span>
+          <span class="text-[10px]" style="color:${sub.fg}">${sub.name}</span>
+        `;
+        card.ondragstart = (e) => {
+          e.dataTransfer.setData("application/json", JSON.stringify({ code: sub.code }));
+        };
+        modContainer.appendChild(card);
+      });
+
+      renderWeeklyGrid();
+      refreshKPIs();
+    }
+
+    function renderWeeklyGrid() {
+      const matrix = document.getElementById("timetableMatrix");
+      let html = `
+        <div class="grid grid-cols-8 bg-slate-100 font-bold border-b border-slate-200 text-center">
+          <div class="p-2 border-r border-slate-200">SLOT</div>
+          ${WEEK_DAYS.map(d => `<div class="p-2 border-r border-slate-200 last:border-r-0">${d.toUpperCase()}</div>`).join('')}
+        </div>
+      `;
+
+      WEEKLY_SLOTS.forEach(slot => {
+        html += `
+          <div class="grid grid-cols-8 border-b border-slate-200 min-h-[75px]">
+            <div class="p-2 border-r border-slate-200 bg-slate-50 font-bold text-[11px] text-sky-700 flex flex-col justify-center text-center">
+              <span>${slot.label}</span>
+              <span class="text-[9px] text-slate-500 font-normal">(${slot.hours}h - ${slot.tag})</span>
+            </div>
+        `;
+
+        WEEK_DAYS.forEach(day => {
+          const item = weeklySchedule[day][slot.label];
+          const isActive = activeSlot && activeSlot.day === day && activeSlot.slot === slot.label;
+          let cellStyle = "background-color:#FFFFFF;";
+          let content = `<span class="text-slate-400 italic">Unassigned</span>`;
+
+          if (item) {
+            const meta = SUBJECT_MODULES.find(m => m.code === item.code) || { bg: "#f1f5f9", fg: "#0f172a", bd: "#cbd5e1" };
+            cellStyle = `background-color:${meta.bg}; border-color:${meta.bd};`;
+            const varGap = (item.actual || 0) - slot.hours;
+            const varStr = (item.actual || 0) > 0 ? `(${varGap > 0 ? '+' : ''}${varGap.toFixed(1)}h)` : '';
+            content = `
+              <div class="font-bold" style="color:${meta.fg}">${item.code}</div>
+              <div class="text-[10px] text-slate-600 truncate">${item.topic || ''}</div>
+              <div class="text-[10px] font-bold mt-1 text-slate-700">${item.actual || 0}h / ${slot.hours}h <span class="${varGap >= 0 ? 'text-emerald-700' : 'text-rose-700'}">${varStr}</span></div>
+            `;
+          }
+
+          html += `
+            <div class="p-1.5 border-r border-slate-200 last:border-r-0 drop-target flex flex-col justify-between cursor-pointer ${isActive ? 'ring-2 ring-sky-500' : ''}" 
+                 style="${cellStyle}"
+                 onclick="selectSlot('${day}', '${slot.label}')"
+                 ondblclick="editSlotPrompt('${day}', '${slot.label}')"
+                 ondragover="event.preventDefault(); this.classList.add('drag-over')"
+                 ondragleave="this.classList.remove('drag-over')"
+                 ondrop="onSlotDrop(event, '${day}', '${slot.label}', ${slot.hours})">
+              ${content}
+            </div>
+          `;
+        });
+
+        html += `</div>`;
+      });
+
+      matrix.innerHTML = html;
+    }
+
+    function onSlotDrop(e, day, slotLabel, defaultHours) {
+      e.preventDefault();
+      const raw = e.dataTransfer.getData("application/json");
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      weeklySchedule[day][slotLabel] = {
+        code: data.code,
+        planned: defaultHours,
+        actual: 0.0,
+        topic: "General Revision"
+      };
+      saveWeeklySchedule();
+    }
+
+    function selectSlot(day, slotLabel) {
+      activeSlot = { day, slot: slotLabel };
+      renderWeeklyGrid();
+    }
+
+    function editSlotPrompt(day, slotLabel) {
+      const item = weeklySchedule[day][slotLabel];
+      if (!item) return alert("Assign a subject module first by dragging it here.");
+      const act = prompt("Enter Actual Hours Studied (decimal):", item.actual || 0);
+      if (act === null) return;
+      const topic = prompt("Enter Topic / Standard Studied:", item.topic || "");
+      item.actual = parseFloat(act) || 0;
+      item.topic = topic || "General Revision";
+      saveWeeklySchedule();
+    }
+
+    function saveWeeklySchedule() {
+      localStorage.setItem("ca_weekly_vault", JSON.stringify(weeklySchedule));
+      renderWeeklyGrid();
+      refreshKPIs();
+    }
+
+    function refreshKPIs() {
+      let totPln = 0;
+      let totAct = 0;
+      WEEK_DAYS.forEach(d => {
+        WEEKLY_SLOTS.forEach(s => {
+          const item = weeklySchedule[d][s.label];
+          if (item) {
+            totPln += item.planned || s.hours;
+            totAct += item.actual || 0;
+          }
+        });
+      });
+
+      const variance = totAct - totPln;
+      const eff = totPln > 0 ? (totAct / totPln * 100) : 0;
+
+      document.getElementById("kpiPlanned").innerText = `${totPln.toFixed(1)} hrs`;
+      document.getElementById("kpiActual").innerText = `${totAct.toFixed(1)} hrs`;
+      document.getElementById("kpiVariance").innerText = `${variance >= 0 ? '+' : ''}${variance.toFixed(1)} hrs`;
+      document.getElementById("kpiEff").innerText = `${eff.toFixed(1)} %`;
+    }
+
+    function toggleStopwatch() {
+      if (!timerRunning) {
+        if (!activeSlot || !weeklySchedule[activeSlot.day][activeSlot.slot]) {
+          return alert("Click on an assigned slot in the weekly matrix to bind your timer session.");
+        }
+        timerRunning = true;
+        document.getElementById("btnStopwatch").innerText = "⏹ Stop & Log";
+        document.getElementById("btnStopwatch").className = "px-3 py-1.5 text-xs font-bold rounded bg-rose-500 hover:bg-rose-400 text-white transition";
+        timerInterval = setInterval(() => {
+          timerSeconds++;
+          const h = Math.floor(timerSeconds / 3600);
+          const m = Math.floor((timerSeconds % 3600) / 60);
+          const s = timerSeconds % 60;
+          document.getElementById("stopwatchDisplay").innerText = 
+            `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        }, 1000);
+      } else {
+        clearInterval(timerInterval);
+        timerRunning = false;
+        document.getElementById("btnStopwatch").innerText = "▶ Start Session";
+        document.getElementById("btnStopwatch").className = "px-3 py-1.5 text-xs font-bold rounded bg-sky-500 hover:bg-sky-400 text-slate-900 transition";
+        
+        const addedHours = Math.round((timerSeconds / 3600) * 100) / 100;
+        const item = weeklySchedule[activeSlot.day][activeSlot.slot];
+        if (item) {
+          item.actual = Math.round(((item.actual || 0) + addedHours) * 100) / 100;
+          saveWeeklySchedule();
+          alert(`Logged ${addedHours} hrs to ${item.code} on ${activeSlot.day}`);
+        }
+        timerSeconds = 0;
+        document.getElementById("stopwatchDisplay").innerText = "00:00:00";
+      }
+    }
+
+    // ----------------------------------------------------
+    // 4. DAY-WISE MULTI-SUBJECT LOGGER
+    // ----------------------------------------------------
+    let editingLogDate = null;
+
+    function setLogToday() {
+      document.getElementById("logDateInput").value = new Date().toISOString().slice(0, 10);
+    }
+
+    function commitLogEntry() {
+      const dt = document.getElementById("logDateInput").value;
+      if (!dt) return alert("Select a date.");
+
+      const subs = ["FR", "AFM", "AUDIT", "TAX", "GST", "SETA", "SETB"];
+      let totalMins = 0;
+      const entryBreakdown = {};
+
+      subs.forEach(s => {
+        const val = parseInt(document.getElementById(`in_${s}`).value) || 0;
+        entryBreakdown[s] = val;
+        totalMins += val;
+      });
+
+      if (totalMins === 0) return alert("Log minutes for at least one subject.");
+
+      // Check existing
+      const existingIdx = subjectLogs.findIndex(l => l.date === dt);
+      const record = { date: dt, totalMins, ...entryBreakdown };
+
+      if (existingIdx >= 0) {
+        subjectLogs[existingIdx] = record;
+      } else {
+        subjectLogs.push(record);
+      }
+
+      subjectLogs.sort((a, b) => b.date.localeCompare(a.date));
+      localStorage.setItem("ca_subject_logs", JSON.stringify(subjectLogs));
+
+      cancelLogEdit();
+      renderLogTable();
+    }
+
+    function renderLogTable() {
+      const tbody = document.getElementById("loggerTableBody");
+      tbody.innerHTML = "";
+
+      subjectLogs.forEach(entry => {
+        const hrs = Math.floor(entry.totalMins / 60);
+        const mins = entry.totalMins % 60;
+        const dec = (entry.totalMins / 60).toFixed(2);
+
+        const parts = ["FR", "AFM", "AUDIT", "TAX", "GST", "SETA", "SETB"]
+          .filter(s => entry[s] > 0)
+          .map(s => `${s}: ${entry[s]}m`);
+
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-50 cursor-pointer";
+        tr.onclick = () => loadLogForEdit(entry.date);
+        tr.innerHTML = `
+          <td class="p-2.5 font-bold text-slate-800">${entry.date}</td>
+          <td class="p-2.5">${hrs}h ${mins}m (${dec}h)</td>
+          <td class="p-2.5">${entry.totalMins}</td>
+          <td class="p-2.5 text-slate-600">${parts.join(", ") || "-"}</td>
+          <td class="p-2.5 text-right"><button onclick="deleteLogEntry(event, '${entry.date}')" class="text-rose-600 font-bold hover:underline">Delete</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function loadLogForEdit(dateStr) {
+      const entry = subjectLogs.find(l => l.date === dateStr);
+      if (!entry) return;
+
+      editingLogDate = dateStr;
+      document.getElementById("logDateInput").value = entry.date;
+      ["FR", "AFM", "AUDIT", "TAX", "GST", "SETA", "SETB"].forEach(s => {
+        document.getElementById(`in_${s}`).value = entry[s] || "";
+      });
+
+      document.getElementById("loggerModeTitle").innerText = `Editing Progress for ${dateStr}`;
+      document.getElementById("btnSaveLog").innerText = "SAVE EDITED CHANGES";
+      document.getElementById("btnCancelEdit").classList.remove("hidden");
+    }
+
+    function cancelLogEdit() {
+      editingLogDate = null;
+      document.getElementById("loggerModeTitle").innerText = "Log Lecture Minutes by Subject";
+      document.getElementById("btnSaveLog").innerText = "COMMIT LOG ENTRY";
+      document.getElementById("btnCancelEdit").classList.add("hidden");
+      ["FR", "AFM", "AUDIT", "TAX", "GST", "SETA", "SETB"].forEach(s => {
+        document.getElementById(`in_${s}`).value = "";
+      });
+      setLogToday();
+    }
+
+    function deleteLogEntry(e, dateStr) {
+      e.stopPropagation();
+      if (!confirm(`Delete entry for ${dateStr}?`)) return;
+      subjectLogs = subjectLogs.filter(l => l.date !== dateStr);
+      localStorage.setItem("ca_subject_logs", JSON.stringify(subjectLogs));
+      renderLogTable();
+    }
+
+    // ----------------------------------------------------
+    // 5. FR 155-LECTURE TRACKER
+    // ----------------------------------------------------
+    let activeLectureId = null;
+
+    function renderFRTable() {
+      const filter = document.getElementById("frFilterSelect").value;
+      const tbody = document.getElementById("frTableBody");
+      tbody.innerHTML = "";
+
+      Object.keys(frData)
+        .sort((a, b) => parseInt(a) - parseInt(b))
+        .forEach(k => {
+          const item = frData[k];
+          if (filter !== "All" && item.group !== filter) return;
+
+          const tr = document.createElement("tr");
+          tr.className = `hover:bg-sky-50 cursor-pointer ${activeLectureId === k ? 'bg-sky-100' : ''}`;
+          tr.onclick = () => selectFRLecture(k);
+          tr.innerHTML = `
+            <td class="p-2 text-center font-bold text-slate-500">${item.num}</td>
+            <td class="p-2 font-semibold text-slate-800">${item.title}</td>
+            <td class="p-2 text-slate-500">${item.group}</td>
+            <td class="p-2 text-center">${item.watch_date || '-'}</td>
+            <td class="p-2 text-center">${item.watch_minutes > 0 ? item.watch_minutes + 'm' : '-'}</td>
+            <td class="p-2 text-center text-sky-600 font-bold">${item.watched ? '✔' : '-'}</td>
+            <td class="p-2 text-center text-amber-600 font-bold">${item.rev1 ? '★' : '-'}</td>
+            <td class="p-2 text-center text-orange-600 font-bold">${item.rev2 ? '★' : '-'}</td>
+            <td class="p-2 text-center text-emerald-600 font-bold">${item.rev3 ? '★' : '-'}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+    }
+
+    function selectFRLecture(id) {
+      activeLectureId = id;
+      const item = frData[id];
+      document.getElementById("frActiveTitle").innerText = `#${item.num} - ${item.title}`;
+      document.getElementById("frEntryDate").value = item.watch_date || "";
+      document.getElementById("frEntryMins").value = item.watch_minutes || "";
+      document.getElementById("frChkDone").checked = !!item.watched;
+      document.getElementById("frChkR1").checked = !!item.rev1;
+      document.getElementById("frChkR2").checked = !!item.rev2;
+      document.getElementById("frChkR3").checked = !!item.rev3;
+      document.getElementById("frEntryNotes").value = item.note || "";
+      renderFRTable();
+    }
+
+    function setFRToday() {
+      document.getElementById("frEntryDate").value = new Date().toISOString().slice(0, 10);
+    }
+
+    function saveActiveLecture() {
+      if (!activeLectureId) return alert("Select a lecture from the list first.");
+      const item = frData[activeLectureId];
+      const d = document.getElementById("frEntryDate").value;
+      const m = parseInt(document.getElementById("frEntryMins").value) || 0;
+
+      item.watch_date = d;
+      item.watch_minutes = m;
+      item.watched = document.getElementById("frChkDone").checked || (d !== "" || m > 0);
+      item.rev1 = document.getElementById("frChkR1").checked;
+      item.rev2 = document.getElementById("frChkR2").checked;
+      item.rev3 = document.getElementById("frChkR3").checked;
+      item.note = document.getElementById("frEntryNotes").value.trim();
+
+      localStorage.setItem("ca_fr_data", JSON.stringify(frData));
+      renderFRTable();
+      updateFRStats();
+      alert(`Updated Lecture #${item.num}`);
+    }
+
+    function updateFRStats() {
+      const keys = Object.keys(frData);
+      const total = keys.length;
+      const watched = keys.filter(k => frData[k].watched).length;
+      const totalMins = keys.reduce((acc, k) => acc + (frData[k].watch_minutes || 0), 0);
+      const hrs = (totalMins / 60).toFixed(1);
+      const pct = total > 0 ? ((watched / total) * 100).toFixed(1) : 0;
+
+      document.getElementById("frSummaryStats").innerText = 
+        `Grand Total Time: ${hrs} hrs (${totalMins} mins) | Watched: ${watched}/${total} (${pct}%)`;
+    }
+
+    // ----------------------------------------------------
+    // 6. WORKLOAD QUOTA & EXPORTERS
+    // ----------------------------------------------------
+    function calculateQuota() {
+      const sStr = document.getElementById("quotaStart").value;
+      const eStr = document.getElementById("quotaEnd").value;
+      if (!sStr || !eStr) return alert("Set valid dates");
+
+      const start = new Date(sStr);
+      const end = new Date(eStr);
+      const diffDays = Math.round((end - start) / (1000 * 3600 * 24)) + 1;
+
+      if (diffDays <= 0) return alert("End date must be after Start date");
+
+      const tot = ["Audit", "AFM", "FR", "DT", "IDT"]
+        .map(sub => parseFloat(document.getElementById(`q_${sub}`).value) || 0)
+        .reduce((a, b) => a + b, 0);
+
+      const pace = (tot / diffDays).toFixed(2);
+      document.getElementById("quotaSummaryBox").innerHTML = 
+        `<strong>Total Workload:</strong> ${tot.toFixed(1)} hrs | <strong>Available Days:</strong> ${diffDays} | <strong>Required Pace:</strong> ${pace} hrs/day`;
+      document.getElementById("quotaSummaryBox").className = "p-3 rounded bg-emerald-50 border border-emerald-200 text-xs text-emerald-900";
+    }
+
+    function exportCSV() {
+      let csv = "Subject,Quota Hours\n";
+      ["Audit", "AFM", "FR", "DT", "IDT"].forEach(sub => {
+        csv += `${sub},${document.getElementById(`q_${sub}`).value}\n`;
+      });
+      csv += "\nDate,Total Mins,Breakdown\n";
+      subjectLogs.forEach(l => {
+        csv += `"${l.date}",${l.totalMins},"${JSON.stringify(l).replace(/"/g, '""')}"\n`;
+      });
+
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "CA_Final_Study_Data.csv";
+      a.click();
+    }
+  </script>
+</body>
+</html>

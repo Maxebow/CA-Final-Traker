@@ -2,1086 +2,1406 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ICAI CA Final Executive Study Center & Exam Command Engine</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>CA Final AIR Hub & Lecture Hours Tracker</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#2563eb',
+              600: '#1d4ed8',
+              700: '#1e40af',
+              900: '#1e3a8a',
+            }
+          }
+        }
+      }
+    }
+  </script>
   <style>
-    .drag-chip { cursor: grab; }
-    .drag-chip:active { cursor: grabbing; }
-    .drop-target { transition: background-color 0.15s ease, border-color 0.15s ease; }
-    .drop-target.drag-over { border-color: #0284c7 !important; background-color: #f0f9ff !important; }
+    body {
+      color: #020617;
+      background-color: #f8fafc;
+      -webkit-font-smoothing: antialiased;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .check-box-ca {
+      width: 1.35rem;
+      height: 1.35rem;
+      border: 2px solid #0f172a;
+      border-radius: 0.35rem;
+      appearance: none;
+      -webkit-appearance: none;
+      outline: none;
+      cursor: pointer;
+      display: inline-grid;
+      place-content: center;
+      background-color: #ffffff;
+      transition: all 0.15s ease;
+    }
+    .check-box-ca:checked {
+      background-color: #0f172a;
+    }
+    .check-box-ca:checked::before {
+      content: "\f00c";
+      font-family: "Font Awesome 6 Free";
+      font-weight: 900;
+      color: #ffffff;
+      font-size: 0.75rem;
+    }
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #94a3b8;
+      border-radius: 4px;
+    }
+    .border-heavy {
+      border-width: 2px;
+      border-color: #cbd5e1;
+    }
   </style>
 </head>
-<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col font-sans">
+<body class="min-h-screen flex flex-col justify-between font-sans selection:bg-blue-600 selection:text-white">
 
-  <!-- TOP HEADER COUNTDOWN STRIP -->
-  <header class="bg-white border-b border-slate-200 px-6 py-3 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-30 shadow-sm">
-    <div>
-      <div class="flex items-center gap-3">
-        <h1 id="examTitleDisplay" class="text-lg font-bold text-slate-900 tracking-tight">CA Final Examination</h1>
-        <button onclick="openExamModal()" class="text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 px-2.5 py-1 rounded transition border border-slate-300">
-          ⚙ Edit Target Date
-        </button>
+  <!-- Sticky Header with Countdown -->
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b-2 border-slate-300 shadow-sm px-3 py-2.5">
+    <div class="max-w-4xl mx-auto flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <div class="w-9 h-9 rounded-xl bg-blue-700 flex items-center justify-center text-white font-black text-sm shadow">
+          <i class="fa-solid fa-graduation-cap"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-1.5">
+            <span class="text-xs font-black tracking-tight uppercase text-blue-900">CA Final</span>
+            <span class="text-[10px] font-black uppercase bg-blue-100 text-blue-800 px-1.5 py-0.2 rounded border border-blue-300">New Scheme</span>
+          </div>
+          <div class="text-[10px] font-extrabold text-slate-800 flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
+            <span id="headerExamTitle">May 2027 Exam</span>
+            <button onclick="toggleModal('dateModal')" class="text-blue-700 underline font-black ml-1 text-[10px]">Edit</button>
+          </div>
+        </div>
       </div>
-      <p id="examTargetDisplay" class="text-xs text-slate-500 font-medium">Target: --</p>
-    </div>
 
-    <!-- Countdown Tiles -->
-    <div class="flex items-center gap-2">
-      <div class="bg-slate-50 border border-slate-200 rounded px-3 py-1 text-center min-w-[62px]">
-        <div id="tileDays" class="text-lg font-black text-sky-600">00</div>
-        <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Days</div>
-      </div>
-      <div class="bg-slate-50 border border-slate-200 rounded px-3 py-1 text-center min-w-[55px]">
-        <div id="tileHours" class="text-lg font-black text-sky-600">00</div>
-        <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Hours</div>
-      </div>
-      <div class="bg-slate-50 border border-slate-200 rounded px-3 py-1 text-center min-w-[55px]">
-        <div id="tileMins" class="text-lg font-black text-sky-600">00</div>
-        <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Mins</div>
-      </div>
-      <div class="bg-slate-50 border border-slate-200 rounded px-3 py-1 text-center min-w-[55px]">
-        <div id="tileSecs" class="text-lg font-black text-sky-600">00</div>
-        <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Secs</div>
+      <!-- Compact Countdown Pill -->
+      <div class="flex items-center gap-1 bg-slate-950 text-white px-2.5 py-1.5 rounded-xl font-mono text-center shadow">
+        <div>
+          <div id="daysCount" class="text-xs sm:text-sm font-black text-amber-300 leading-none">00</div>
+          <div class="text-[8px] uppercase font-bold text-slate-400">D</div>
+        </div>
+        <span class="text-slate-500 font-black text-xs">:</span>
+        <div>
+          <div id="hoursCount" class="text-xs sm:text-sm font-black text-emerald-300 leading-none">00</div>
+          <div class="text-[8px] uppercase font-bold text-slate-400">H</div>
+        </div>
+        <span class="text-slate-500 font-black text-xs">:</span>
+        <div>
+          <div id="minsCount" class="text-xs sm:text-sm font-black text-cyan-300 leading-none">00</div>
+          <div class="text-[8px] uppercase font-bold text-slate-400">M</div>
+        </div>
       </div>
     </div>
   </header>
 
-  <!-- NAVIGATION TABS -->
-  <nav class="bg-white border-b border-slate-200 px-6 flex space-x-1 text-sm font-semibold overflow-x-auto">
-    <button onclick="switchTab('tab-cal')" id="btn-tab-cal" class="tab-btn px-4 py-3 border-b-2 border-sky-600 text-sky-600 whitespace-nowrap">🗓️ Visual Color Planner</button>
-    <button onclick="switchTab('tab-week')" id="btn-tab-week" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-600 hover:text-slate-900 whitespace-nowrap">⏱️ Weekly Timetable & Audit</button>
-    <button onclick="switchTab('tab-log')" id="btn-tab-log" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-600 hover:text-slate-900 whitespace-nowrap">📝 Daily Multi-Subject Logger</button>
-    <button onclick="switchTab('tab-fr')" id="btn-tab-fr" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-600 hover:text-slate-900 whitespace-nowrap">📚 FR 155-Lecture Console</button>
-    <button onclick="switchTab('tab-quota')" id="btn-tab-quota" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-600 hover:text-slate-900 whitespace-nowrap">📊 Workload & Exporters</button>
-  </nav>
+  <main class="flex-1 max-w-4xl w-full mx-auto p-3 sm:p-5 space-y-4 mb-20">
 
-  <!-- WORKSPACE PANELS -->
-  <main class="flex-1 p-4 md:p-6 overflow-y-auto">
-
-    <!-- TAB 1: CALENDAR -->
-    <section id="tab-cal" class="tab-pane space-y-4">
-      <div class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
-        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Palette (Select Color Brush or Drag Color Chip onto Days):</span>
-        <div class="flex flex-wrap items-center gap-3" id="paletteChips"></div>
+    <!-- TAB 1: TODAY & FOCUS TIMER -->
+    <div id="tab-today-view" class="space-y-4">
+      
+      <!-- Key Statistics Summary Card -->
+      <div class="grid grid-cols-3 gap-2">
+        <div class="bg-blue-50 border-2 border-blue-200 p-3 rounded-2xl">
+          <div class="text-[10px] font-black uppercase text-blue-900 tracking-wider">Self Study</div>
+          <div id="statSelfHours" class="text-xl sm:text-2xl font-black text-blue-950 font-mono mt-0.5">0.0h</div>
+          <div class="text-[10px] font-bold text-blue-800">Today</div>
+        </div>
+        <div class="bg-purple-50 border-2 border-purple-200 p-3 rounded-2xl">
+          <div class="text-[10px] font-black uppercase text-purple-900 tracking-wider">Lectures</div>
+          <div id="statLectureHours" class="text-xl sm:text-2xl font-black text-purple-950 font-mono mt-0.5">0.0h</div>
+          <div class="text-[10px] font-bold text-purple-800">Today</div>
+        </div>
+        <div class="bg-emerald-50 border-2 border-emerald-200 p-3 rounded-2xl">
+          <div class="text-[10px] font-black uppercase text-emerald-900 tracking-wider">Total Work</div>
+          <div id="statCombinedHours" class="text-xl sm:text-2xl font-black text-emerald-950 font-mono mt-0.5">0.0h</div>
+          <div class="text-[10px] font-bold text-emerald-800">Target: 12h</div>
+        </div>
       </div>
 
-      <div class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
-        <div class="flex items-center justify-between mb-4">
-          <button onclick="changeMonth(-1)" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-xs font-bold rounded text-slate-700">◀ Previous</button>
-          <h2 id="calendarMonthTitle" class="text-base font-bold text-slate-800">Month YYYY</h2>
-          <button onclick="changeMonth(1)" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-xs font-bold rounded text-slate-700">Next ▶</button>
-        </div>
-        <div class="grid grid-cols-7 gap-1 text-center font-bold text-xs text-slate-500 mb-1">
-          <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div>
-        </div>
-        <div id="calendarGrid" class="grid grid-cols-7 gap-1.5"></div>
-      </div>
-    </section>
-
-    <!-- TAB 2: WEEKLY TIMETABLE -->
-    <section id="tab-week" class="tab-pane hidden space-y-4">
-      <!-- Ribbon KPI & Stopwatch -->
-      <div class="bg-white border border-slate-200 rounded-lg p-3 shadow-sm flex flex-wrap items-center justify-between gap-4">
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 flex-1">
-          <div class="bg-slate-50 border border-slate-200 p-2 rounded">
-            <span class="text-[10px] font-bold text-slate-500 block">TARGET PLANNED</span>
-            <span id="kpiPlanned" class="text-sm font-bold text-slate-900">0.0 hrs</span>
+      <!-- Sacred ICAI Exam Slot Reminder Banner -->
+      <div class="bg-amber-100 border-2 border-amber-300 p-3 rounded-2xl flex items-center justify-between gap-3 shadow-sm">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-amber-500 text-amber-950 flex items-center justify-center font-black text-base shadow">
+            <i class="fa-solid fa-bell"></i>
           </div>
-          <div class="bg-slate-50 border border-slate-200 p-2 rounded">
-            <span class="text-[10px] font-bold text-slate-500 block">ACTUAL STUDIED</span>
-            <span id="kpiActual" class="text-sm font-bold text-sky-600">0.0 hrs</span>
-          </div>
-          <div class="bg-slate-50 border border-slate-200 p-2 rounded">
-            <span class="text-[10px] font-bold text-slate-500 block">VARIANCE GAP</span>
-            <span id="kpiVariance" class="text-sm font-bold text-slate-700">0.0 hrs</span>
-          </div>
-          <div class="bg-slate-50 border border-slate-200 p-2 rounded">
-            <span class="text-[10px] font-bold text-slate-500 block">PRODUCTIVITY</span>
-            <span id="kpiEff" class="text-sm font-bold text-emerald-600">0.0 %</span>
-          </div>
-        </div>
-
-        <div class="bg-slate-900 text-white rounded-lg p-2.5 px-4 flex items-center gap-4">
           <div>
-            <div class="text-[9px] font-bold text-slate-400">STUDY STOPWATCH</div>
-            <div id="stopwatchDisplay" class="font-mono text-base font-bold text-sky-400">00:00:00</div>
+            <div class="text-xs font-black text-amber-950 uppercase tracking-tight">Official ICAI Exam Zone: 02:00 PM – 05:00 PM</div>
+            <div class="text-[11px] font-bold text-amber-900">Zero sleeping, peak mental alertness, and writing practice!</div>
           </div>
-          <button id="btnStopwatch" onclick="toggleStopwatch()" class="px-3 py-1.5 text-xs font-bold rounded bg-sky-500 hover:bg-sky-400 text-slate-900 transition">
-            ▶ Start Session
-          </button>
         </div>
+        <button onclick="setTimerDuration(180, 'Full Mock Test (180m)')" class="px-2.5 py-1.5 bg-amber-950 text-white rounded-xl text-xs font-extrabold whitespace-nowrap shadow active:scale-95 transition">
+          3h Mock
+        </button>
       </div>
 
-      <!-- Timetable Layout -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <div class="lg:col-span-3 bg-white border border-slate-200 rounded-lg p-3 shadow-sm space-y-2">
-          <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Drag Course Module:</h3>
-          <p class="text-[11px] text-slate-500">Drag a subject box into any calendar slot. Click slot to set as active stopwatch destination.</p>
-          <div id="subjectModulesContainer" class="space-y-2 pt-2"></div>
-        </div>
-
-        <div class="lg:col-span-9 bg-white border border-slate-200 rounded-lg p-3 shadow-sm overflow-x-auto">
-          <div id="timetableMatrix" class="min-w-[700px] border border-slate-200 rounded text-xs"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- TAB 3: DAILY LOGGER -->
-    <section id="tab-log" class="tab-pane hidden space-y-4">
-      <div class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
-        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <h3 id="loggerModeTitle" class="text-sm font-bold text-slate-900">Log Lecture Minutes by Subject</h3>
+      <!-- CA Final Focus / Exam Writing Timer -->
+      <div class="bg-white border-2 border-slate-300 rounded-3xl p-4 sm:p-5 shadow-sm space-y-4">
+        <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
-            <label class="text-xs font-bold text-slate-600">Date:</label>
-            <input type="date" id="logDateInput" class="border border-slate-300 rounded px-2 py-1 text-xs font-semibold">
-            <button onclick="setLogToday()" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-xs font-semibold rounded">Today</button>
+            <i class="fa-solid fa-stopwatch text-blue-700 text-lg"></i>
+            <h2 class="text-sm sm:text-base font-black text-slate-950 uppercase tracking-tight">CA Final Deep Work Timer</h2>
+          </div>
+          <span id="timerBadge" class="text-[10px] font-black uppercase bg-slate-100 text-slate-800 px-2.5 py-1 rounded-full border border-slate-300">Ready</span>
+        </div>
+
+        <!-- Subject Tags for Timer -->
+        <div>
+          <label class="block text-[11px] font-black uppercase text-slate-800 mb-1.5">Select Paper</label>
+          <div class="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+            <button onclick="selectTimerPaper('Paper 1: FR')" class="timer-paper-btn py-1.5 px-2 rounded-xl text-xs font-black border-2 border-blue-600 bg-blue-600 text-white" data-paper="Paper 1: FR">P1 FR</button>
+            <button onclick="selectTimerPaper('Paper 2: AFM')" class="timer-paper-btn py-1.5 px-2 rounded-xl text-xs font-black border-2 border-slate-300 bg-slate-50 text-slate-800" data-paper="Paper 2: AFM">P2 AFM</button>
+            <button onclick="selectTimerPaper('Paper 3: Audit')" class="timer-paper-btn py-1.5 px-2 rounded-xl text-xs font-black border-2 border-slate-300 bg-slate-50 text-slate-800" data-paper="Paper 3: Audit">P3 Audit</button>
+            <button onclick="selectTimerPaper('Paper 4: DT')" class="timer-paper-btn py-1.5 px-2 rounded-xl text-xs font-black border-2 border-slate-300 bg-slate-50 text-slate-800" data-paper="Paper 4: DT">P4 DT</button>
+            <button onclick="selectTimerPaper('Paper 5: IDT')" class="timer-paper-btn py-1.5 px-2 rounded-xl text-xs font-black border-2 border-slate-300 bg-slate-50 text-slate-800" data-paper="Paper 5: IDT">P5 IDT</button>
+            <button onclick="selectTimerPaper('Paper 6: IBS')" class="timer-paper-btn py-1.5 px-2 rounded-xl text-xs font-black border-2 border-slate-300 bg-slate-50 text-slate-800" data-paper="Paper 6: IBS">P6 IBS</button>
           </div>
         </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-4">
-          <div>
-            <label class="text-[11px] font-bold text-slate-600 block mb-1">FR (mins)</label>
-            <input type="number" id="in_FR" class="w-full border border-slate-300 rounded p-1.5 text-xs text-center" min="0" placeholder="0">
+        <!-- Preset Intervals -->
+        <div class="flex flex-wrap items-center justify-center gap-1.5">
+          <button onclick="setTimerDuration(180, 'Full ICAI Exam Simulation (180m)')" class="px-2.5 py-1 text-xs font-black rounded-lg bg-red-100 border border-red-300 text-red-900">180m Exam</button>
+          <button onclick="setTimerDuration(90, 'Practical Sums Deep Sprint (90m)')" class="px-2.5 py-1 text-xs font-black rounded-lg bg-blue-100 border border-blue-300 text-blue-900">90m Sums</button>
+          <button onclick="setTimerDuration(45, 'Theory / SAs / Standards (45m)')" class="px-2.5 py-1 text-xs font-black rounded-lg bg-amber-100 border border-amber-300 text-amber-900">45m Theory</button>
+          <button onclick="setTimerDuration(15, 'Quick Rejuvenation Break (15m)')" class="px-2.5 py-1 text-xs font-black rounded-lg bg-emerald-100 border border-emerald-300 text-emerald-900">15m Break</button>
+        </div>
+
+        <!-- Digital Timer Face -->
+        <div class="text-center py-2 bg-slate-950 rounded-2xl text-white">
+          <div id="timerDisplay" class="text-5xl sm:text-6xl font-black font-mono tracking-tight text-white drop-shadow">
+            90:00
           </div>
-          <div>
-            <label class="text-[11px] font-bold text-slate-600 block mb-1">AFM (mins)</label>
-            <input type="number" id="in_AFM" class="w-full border border-slate-300 rounded p-1.5 text-xs text-center" min="0" placeholder="0">
-          </div>
-          <div>
-            <label class="text-[11px] font-bold text-slate-600 block mb-1">AUDIT (mins)</label>
-            <input type="number" id="in_AUDIT" class="w-full border border-slate-300 rounded p-1.5 text-xs text-center" min="0" placeholder="0">
-          </div>
-          <div>
-            <label class="text-[11px] font-bold text-slate-600 block mb-1">TAX (mins)</label>
-            <input type="number" id="in_TAX" class="w-full border border-slate-300 rounded p-1.5 text-xs text-center" min="0" placeholder="0">
-          </div>
-          <div>
-            <label class="text-[11px] font-bold text-slate-600 block mb-1">GST (mins)</label>
-            <input type="number" id="in_GST" class="w-full border border-slate-300 rounded p-1.5 text-xs text-center" min="0" placeholder="0">
-          </div>
-          <div>
-            <label class="text-[11px] font-bold text-slate-600 block mb-1">SET A (mins)</label>
-            <input type="number" id="in_SETA" class="w-full border border-slate-300 rounded p-1.5 text-xs text-center" min="0" placeholder="0">
-          </div>
-          <div>
-            <label class="text-[11px] font-bold text-slate-600 block mb-1">SET B (mins)</label>
-            <input type="number" id="in_SETB" class="w-full border border-slate-300 rounded p-1.5 text-xs text-center" min="0" placeholder="0">
+          <div id="sessionModeLabel" class="text-xs font-bold text-slate-300 mt-1 uppercase tracking-wide">
+            Paper 1: FR - Practical Numerical Solving
           </div>
         </div>
 
-        <div class="flex gap-2">
-          <button onclick="commitLogEntry()" id="btnSaveLog" class="flex-1 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded transition">
-            COMMIT LOG ENTRY
+        <!-- Controls -->
+        <div class="flex items-center gap-2 pt-1">
+          <button id="startTimerBtn" onclick="toggleTimer()" class="flex-1 py-3 px-4 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-black text-sm uppercase tracking-wider shadow-md transition active:scale-95 flex items-center justify-center gap-2">
+            <i class="fa-solid fa-play"></i> <span>Start Session</span>
           </button>
-          <button onclick="cancelLogEdit()" id="btnCancelEdit" class="hidden px-4 py-2 bg-slate-400 hover:bg-slate-500 text-white font-bold text-xs rounded transition">
-            Cancel Edit
+          <button onclick="resetTimer()" class="py-3 px-4 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-900 font-black text-sm transition" title="Reset">
+            <i class="fa-solid fa-rotate-right"></i>
           </button>
         </div>
       </div>
 
-      <div class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
-        <h4 class="text-xs font-bold text-emerald-700 mb-2 uppercase">Day-Wise Aggregate Log (Click row to edit)</h4>
-        <div class="overflow-x-auto">
-          <table class="w-full text-xs text-left border-collapse">
-            <thead class="bg-slate-50 text-slate-600 border-b border-slate-200">
-              <tr>
-                <th class="p-2.5">Date</th>
-                <th class="p-2.5">Total (Hours)</th>
-                <th class="p-2.5">Total (Mins)</th>
-                <th class="p-2.5">Breakdown</th>
-                <th class="p-2.5 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody id="loggerTableBody" class="divide-y divide-slate-100"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- TAB 4: FR SYLLABUS -->
-    <section id="tab-fr" class="tab-pane hidden space-y-4">
-      <div class="bg-white border border-slate-200 rounded-lg p-3 shadow-sm flex flex-wrap items-center justify-between gap-3">
-        <div id="frSummaryStats" class="text-xs font-bold text-sky-700">Loading metrics...</div>
-        <div class="flex items-center gap-2">
-          <label class="text-xs font-bold text-slate-500">Filter Group:</label>
-          <select id="frFilterSelect" onchange="renderFRTable()" class="border border-slate-300 rounded px-2 py-1 text-xs">
-            <option value="All">All Sets</option>
-            <option value="Part 1 - Set A">Part 1 - Set A</option>
-            <option value="Part 1 - Set B">Part 1 - Set B</option>
-            <option value="Part 1 - Set C">Part 1 - Set C</option>
-            <option value="Part 1 - Set D">Part 1 - Set D</option>
-            <option value="Part 2 - Set A">Part 2 - Set A</option>
-            <option value="Part 2 - Set B">Part 2 - Set B</option>
-            <option value="Part 2 - Set C">Part 2 - Set C</option>
-            <option value="Part 2 - Set D">Part 2 - Set D</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <div class="lg:col-span-8 bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden flex flex-col max-h-[620px]">
-          <div class="overflow-y-auto flex-1">
-            <table class="w-full text-xs text-left">
-              <thead class="bg-slate-50 text-slate-600 sticky top-0 border-b border-slate-200">
-                <tr>
-                  <th class="p-2 text-center">#</th>
-                  <th class="p-2">Lecture Standard / Topic</th>
-                  <th class="p-2">Group</th>
-                  <th class="p-2 text-center">Watched Date</th>
-                  <th class="p-2 text-center">Mins</th>
-                  <th class="p-2 text-center">Done</th>
-                  <th class="p-2 text-center">R1</th>
-                  <th class="p-2 text-center">R2</th>
-                  <th class="p-2 text-center">R3</th>
-                </tr>
-              </thead>
-              <tbody id="frTableBody" class="divide-y divide-slate-100"></tbody>
-            </table>
+      <!-- Daily Checklist / Target Tasks -->
+      <div class="bg-white border-2 border-slate-300 rounded-3xl p-4 sm:p-5 shadow-sm space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-list-check text-blue-700"></i>
+            <h3 class="text-sm font-black text-slate-950 uppercase tracking-tight">Today's Targets</h3>
           </div>
+          <span id="taskDoneCounter" class="text-xs font-black bg-blue-100 text-blue-900 border border-blue-300 px-2 py-0.5 rounded-full">0/0 done</span>
         </div>
 
-        <!-- Right Side Editor -->
-        <div class="lg:col-span-4 bg-white border border-slate-200 rounded-lg p-4 shadow-sm flex flex-col justify-between">
-          <div class="space-y-3">
-            <h4 class="text-xs font-bold text-sky-600 uppercase tracking-wider">Lecture Workbench</h4>
-            <div id="frActiveTitle" class="text-xs font-bold text-slate-800 border-b pb-2">Select a lecture from the table</div>
+        <form onsubmit="handleAddTask(event)" class="space-y-2">
+          <div class="flex gap-2">
+            <input type="text" id="taskInput" placeholder="e.g. Solve 5 Ind AS 115 comprehensive practical questions" required
+              class="flex-1 bg-slate-50 border-2 border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-950 placeholder-slate-400 focus:outline-none focus:border-blue-600">
+            <button type="submit" class="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-xs font-black shadow transition">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+          </div>
+          <div class="flex gap-2 text-xs">
+            <select id="taskPaper" class="bg-slate-50 border-2 border-slate-300 text-slate-900 font-bold rounded-xl px-2.5 py-1 text-xs">
+              <option value="FR">P1: FR</option>
+              <option value="AFM">P2: AFM</option>
+              <option value="Audit">P3: Audit</option>
+              <option value="DT">P4: DT</option>
+              <option value="IDT">P5: IDT</option>
+              <option value="IBS">P6: IBS</option>
+            </select>
+            <select id="taskPriority" class="bg-slate-50 border-2 border-slate-300 text-slate-900 font-bold rounded-xl px-2.5 py-1 text-xs">
+              <option value="High">High Priority</option>
+              <option value="Medium">Medium Priority</option>
+              <option value="Low">Low Priority</option>
+            </select>
+          </div>
+        </form>
 
-            <div>
-              <label class="text-[11px] font-bold text-slate-500 block mb-1">Watch Date (YYYY-MM-DD):</label>
-              <div class="flex gap-2">
-                <input type="date" id="frEntryDate" class="border border-slate-300 rounded px-2 py-1 text-xs flex-1">
-                <button onclick="setFRToday()" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-xs font-bold rounded text-slate-700">Today</button>
-              </div>
+        <div id="taskListContainer" class="space-y-2 pt-1 max-h-56 overflow-y-auto">
+          <!-- Injected dynamically -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- TAB 2: LECTURE HOURS WATCH TRACKER -->
+    <div id="tab-lectures-view" class="hidden space-y-4">
+      
+      <!-- Top Overview Banner -->
+      <div class="bg-purple-900 text-white p-4 rounded-3xl shadow-sm space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-xl bg-purple-700 flex items-center justify-center text-amber-300 text-sm">
+              <i class="fa-solid fa-video"></i>
             </div>
-
             <div>
-              <label class="text-[11px] font-bold text-slate-500 block mb-1">Watch Duration (Minutes):</label>
-              <input type="number" id="frEntryMins" class="border border-slate-300 rounded p-1.5 text-xs w-full" min="0" placeholder="0">
-            </div>
-
-            <div>
-              <label class="text-[11px] font-bold text-slate-500 block mb-1">Revision Status:</label>
-              <div class="flex items-center gap-3 text-xs font-bold">
-                <label class="flex items-center gap-1 text-sky-600"><input type="checkbox" id="frChkDone"> Watched</label>
-                <label class="flex items-center gap-1 text-amber-600"><input type="checkbox" id="frChkR1"> R1</label>
-                <label class="flex items-center gap-1 text-orange-600"><input type="checkbox" id="frChkR2"> R2</label>
-                <label class="flex items-center gap-1 text-emerald-600"><input type="checkbox" id="frChkR3"> R3</label>
-              </div>
-            </div>
-
-            <div>
-              <label class="text-[11px] font-bold text-slate-500 block mb-1">Study Notes / Standard Keypoints:</label>
-              <textarea id="frEntryNotes" rows="4" class="w-full border border-slate-300 rounded p-2 text-xs" placeholder="Add key points..."></textarea>
+              <h2 class="text-sm sm:text-base font-black uppercase tracking-tight">Lecture Hours Watch Tracker</h2>
+              <p class="text-[11px] font-semibold text-purple-200">Track video classes, faculty pace, and speed multipliers</p>
             </div>
           </div>
-
-          <button onclick="saveActiveLecture()" class="w-full py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded transition mt-4">
-            SAVE LECTURE PROGRESS
+          <button onclick="toggleModal('lectureModal')" class="px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-purple-950 font-black rounded-xl text-xs uppercase tracking-wider shadow active:scale-95 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-plus"></i>
+            <span>Log Lecture</span>
           </button>
+        </div>
+
+        <!-- Big stats banner -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+          <div class="bg-purple-950/70 border border-purple-700/60 p-2.5 rounded-2xl text-center">
+            <div class="text-[10px] uppercase font-bold text-purple-300">Total Watched</div>
+            <div id="totalLectureHoursAll" class="text-xl font-black text-amber-300 font-mono mt-0.5">0.0 hrs</div>
+          </div>
+          <div class="bg-purple-950/70 border border-purple-700/60 p-2.5 rounded-2xl text-center">
+            <div class="text-[10px] uppercase font-bold text-purple-300">Watched Today</div>
+            <div id="todayLectureHoursAll" class="text-xl font-black text-emerald-300 font-mono mt-0.5">0.0 hrs</div>
+          </div>
+          <div class="bg-purple-950/70 border border-purple-700/60 p-2.5 rounded-2xl text-center">
+            <div class="text-[10px] uppercase font-bold text-purple-300">Lectures Logged</div>
+            <div id="totalLectureCount" class="text-xl font-black text-white font-mono mt-0.5">0</div>
+          </div>
+          <div class="bg-purple-950/70 border border-purple-700/60 p-2.5 rounded-2xl text-center">
+            <div class="text-[10px] uppercase font-bold text-purple-300">Target Budget</div>
+            <div class="text-xl font-black text-cyan-300 font-mono mt-0.5">~750 hrs</div>
+          </div>
         </div>
       </div>
-    </section>
 
-    <!-- TAB 5: QUOTA & EXPORTERS -->
-    <section id="tab-quota" class="tab-pane hidden space-y-4">
-      <div class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm max-w-2xl mx-auto space-y-4">
-        <h3 class="text-sm font-bold text-sky-700">Curriculum Quotas & Dynamic Schedule Generation</h3>
-        
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="text-xs font-bold text-slate-600 block mb-1">Start Date:</label>
-            <input type="date" id="quotaStart" value="2026-09-15" class="w-full border border-slate-300 rounded p-1.5 text-xs">
-          </div>
-          <div>
-            <label class="text-xs font-bold text-slate-600 block mb-1">Target End Date:</label>
-            <input type="date" id="quotaEnd" value="2026-12-31" class="w-full border border-slate-300 rounded p-1.5 text-xs">
-          </div>
+      <!-- Paper-wise Lecture Progress Cards -->
+      <div class="bg-white border-2 border-slate-300 rounded-3xl p-4 shadow-sm space-y-3">
+        <div class="flex items-center justify-between pb-1 border-b-2 border-slate-200">
+          <h3 class="text-xs sm:text-sm font-black text-slate-950 uppercase tracking-tight flex items-center gap-1.5">
+            <i class="fa-solid fa-chart-simple text-purple-700"></i>
+            Subject Lecture Completion vs Budget
+          </h3>
+          <span class="text-[10px] font-bold text-slate-500">Typical CA Final Hours</span>
         </div>
 
-        <div class="border border-slate-200 rounded p-3 bg-slate-50 space-y-2">
-          <span class="text-xs font-bold text-slate-700 block mb-1">Subject Target Quotas (Hours):</span>
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
-            <div><label class="text-[11px] font-semibold">Audit (hrs):</label><input id="q_Audit" type="number" value="165" class="w-full border rounded p-1"></div>
-            <div><label class="text-[11px] font-semibold">AFM (hrs):</label><input id="q_AFM" type="number" value="190" class="w-full border rounded p-1"></div>
-            <div><label class="text-[11px] font-semibold">FR (hrs):</label><input id="q_FR" type="number" value="425" class="w-full border rounded p-1"></div>
-            <div><label class="text-[11px] font-semibold">DT (hrs):</label><input id="q_DT" type="number" value="260" class="w-full border rounded p-1"></div>
-            <div><label class="text-[11px] font-semibold">IDT (hrs):</label><input id="q_IDT" type="number" value="140" class="w-full border rounded p-1"></div>
-          </div>
-        </div>
-
-        <div id="quotaSummaryBox" class="p-3 rounded bg-sky-50 border border-sky-200 text-xs text-sky-800 italic">
-          💡 Click 'Calculate Workload' to audit study pace requirements.
-        </div>
-
-        <div class="flex flex-wrap gap-2 pt-2">
-          <button onclick="calculateQuota()" class="flex-1 py-2 px-3 bg-slate-700 hover:bg-slate-800 text-white font-bold text-xs rounded transition">
-            📊 Calculate Pace
-          </button>
-          <button onclick="exportCSV()" class="flex-1 py-2 px-3 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded transition">
-            📥 Export CSV Matrix
-          </button>
-          <button onclick="window.print()" class="flex-1 py-2 px-3 bg-rose-700 hover:bg-rose-800 text-white font-bold text-xs rounded transition">
-            📑 Print / Save PDF
-          </button>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="paperLectureBudgets">
+          <!-- Injected via JS -->
         </div>
       </div>
-    </section>
+
+      <!-- Lecture History Table / Cards -->
+      <div class="bg-white border-2 border-slate-300 rounded-3xl p-4 shadow-sm space-y-3">
+        <div class="flex items-center justify-between pb-1 border-b-2 border-slate-200">
+          <h3 class="text-xs sm:text-sm font-black text-slate-950 uppercase tracking-tight flex items-center gap-1.5">
+            <i class="fa-solid fa-clock-rotate-left text-purple-700"></i>
+            Lecture Viewing History
+          </h3>
+          <button onclick="toggleModal('lectureModal')" class="text-xs font-black text-purple-700 hover:underline">
+            + New Entry
+          </button>
+        </div>
+
+        <div id="lectureLogsContainer" class="space-y-2 max-h-96 overflow-y-auto">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- TAB 3: 6-PAPER SYLLABUS TRACKER -->
+    <div id="tab-syllabus-view" class="hidden space-y-4">
+      <div class="bg-white border-2 border-slate-300 rounded-3xl p-4 shadow-sm space-y-3">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b-2 border-slate-200">
+          <div>
+            <h2 class="text-sm sm:text-base font-black text-slate-950 uppercase tracking-tight">ICAI CA Final 6-Paper Matrix</h2>
+            <p class="text-[11px] font-bold text-slate-600">Track Study Material, Question Bank, RTP/MTP & 2 full revisions</p>
+          </div>
+          <div class="flex items-center gap-1.5 overflow-x-auto py-1">
+            <button onclick="filterSyllabus('All')" id="sylFilter-All" class="syl-btn px-2.5 py-1 text-xs font-black rounded-xl bg-blue-700 text-white">All</button>
+            <button onclick="filterSyllabus('FR')" id="sylFilter-FR" class="syl-btn px-2.5 py-1 text-xs font-black rounded-xl bg-slate-100 text-slate-800 border border-slate-300">FR</button>
+            <button onclick="filterSyllabus('AFM')" id="sylFilter-AFM" class="syl-btn px-2.5 py-1 text-xs font-black rounded-xl bg-slate-100 text-slate-800 border border-slate-300">AFM</button>
+            <button onclick="filterSyllabus('Audit')" id="sylFilter-Audit" class="syl-btn px-2.5 py-1 text-xs font-black rounded-xl bg-slate-100 text-slate-800 border border-slate-300">Audit</button>
+            <button onclick="filterSyllabus('DT')" id="sylFilter-DT" class="syl-btn px-2.5 py-1 text-xs font-black rounded-xl bg-slate-100 text-slate-800 border border-slate-300">DT</button>
+            <button onclick="filterSyllabus('IDT')" id="sylFilter-IDT" class="syl-btn px-2.5 py-1 text-xs font-black rounded-xl bg-slate-100 text-slate-800 border border-slate-300">IDT</button>
+            <button onclick="filterSyllabus('IBS')" id="sylFilter-IBS" class="syl-btn px-2.5 py-1 text-xs font-black rounded-xl bg-slate-100 text-slate-800 border border-slate-300">IBS</button>
+          </div>
+        </div>
+
+        <!-- Overall Mastered Summary -->
+        <div class="p-3 bg-slate-100 border-2 border-slate-300 rounded-2xl flex items-center justify-between">
+          <div>
+            <div class="text-[10px] font-black uppercase text-slate-700">Course Completion</div>
+            <div id="syllabusMasteryTotal" class="text-base font-black text-slate-950 font-mono">0% Completed</div>
+          </div>
+          <button onclick="toggleModal('chapterModal')" class="px-3 py-1.5 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-xs font-black shadow">
+            + Add Topic
+          </button>
+        </div>
+
+        <!-- Chapter List -->
+        <div id="syllabusContainer" class="space-y-2.5">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: ROUTINE & TIMETABLE -->
+    <div id="tab-routine-view" class="hidden space-y-4">
+      <div class="bg-white border-2 border-slate-300 rounded-3xl p-4 shadow-sm space-y-3">
+        <div class="flex items-center justify-between pb-2 border-b-2 border-slate-200">
+          <div>
+            <h2 class="text-sm sm:text-base font-black text-slate-950 uppercase tracking-tight">Ideal 12-Hour Daily Schedule</h2>
+            <p class="text-[11px] font-bold text-slate-600">Peak afternoon alert zone for official ICAI Exam paper</p>
+          </div>
+          <button onclick="resetRoutineChecks()" class="px-2.5 py-1 bg-slate-100 border-2 border-slate-300 rounded-xl text-xs font-black text-slate-800 hover:bg-slate-200">
+            Reset Checks
+          </button>
+        </div>
+
+        <div id="routineContainer" class="space-y-2">
+          <!-- Injected dynamically -->
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: 100-MARKS MOCKS & MISTAKES -->
+    <div id="tab-mocks-view" class="hidden space-y-4">
+      <div class="bg-white border-2 border-slate-300 rounded-3xl p-4 shadow-sm space-y-3">
+        <div class="flex items-center justify-between pb-2 border-b-2 border-slate-200">
+          <div>
+            <h2 class="text-sm sm:text-base font-black text-slate-950 uppercase tracking-tight">100-Marks Mocks & Exemption Tracker</h2>
+            <p class="text-[11px] font-bold text-slate-600">Target >= 60 for Exemption, minimum 40 to pass individual paper</p>
+          </div>
+          <button onclick="toggleModal('mockModal')" class="px-3 py-1.5 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-xs font-black shadow flex items-center gap-1">
+            <i class="fa-solid fa-plus"></i> Log Mock
+          </button>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2">
+          <div class="p-2.5 bg-slate-100 border-2 border-slate-300 rounded-2xl text-center">
+            <div class="text-[10px] font-black uppercase text-slate-700">Mocks Written</div>
+            <div id="mockCountStat" class="text-lg font-black text-slate-950 font-mono mt-0.5">0</div>
+          </div>
+          <div class="p-2.5 bg-emerald-50 border-2 border-emerald-300 rounded-2xl text-center">
+            <div class="text-[10px] font-black uppercase text-emerald-900">Exemptions (60+)</div>
+            <div id="mockExemptionsStat" class="text-lg font-black text-emerald-950 font-mono mt-0.5">0</div>
+          </div>
+          <div class="p-2.5 bg-amber-50 border-2 border-amber-300 rounded-2xl text-center">
+            <div class="text-[10px] font-black uppercase text-amber-900">Avg Score</div>
+            <div id="mockAvgStat" class="text-lg font-black text-amber-950 font-mono mt-0.5">0/100</div>
+          </div>
+        </div>
+
+        <div id="mocksListContainer" class="space-y-2 pt-2">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Data Persistence Bar (Offline / GitHub Pages backup) -->
+    <div class="p-3 bg-white border-2 border-slate-300 rounded-2xl flex flex-wrap items-center justify-between gap-2 text-xs font-extrabold text-slate-800">
+      <div class="flex items-center gap-1.5">
+        <i class="fa-solid fa-hard-drive text-blue-700"></i>
+        <span>Saved locally in browser</span>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <button onclick="exportData()" class="px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-300 hover:bg-slate-200">
+          <i class="fa-solid fa-download mr-1"></i>Backup
+        </button>
+        <label class="px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-300 hover:bg-slate-200 cursor-pointer">
+          <i class="fa-solid fa-upload mr-1"></i>Restore
+          <input type="file" id="importInput" accept=".json" class="hidden" onchange="importData(event)">
+        </label>
+        <button onclick="confirmReset()" class="px-2.5 py-1 rounded-lg bg-red-100 border border-red-300 text-red-900 hover:bg-red-200">
+          Reset
+        </button>
+      </div>
+    </div>
 
   </main>
 
-  <!-- MODAL: EXAM TARGET SETTINGS -->
-  <div id="examModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-lg p-5 max-w-sm w-full space-y-3 shadow-xl">
-      <h3 class="text-sm font-bold text-slate-800">Configure Target Exam Goal</h3>
-      <div>
-        <label class="text-xs font-semibold text-slate-600 block mb-1">Exam / Goal Title:</label>
-        <input type="text" id="modalExamName" class="w-full border border-slate-300 rounded p-1.5 text-xs">
+  <!-- Mobile Ergonomic Sticky Bottom Navigation -->
+  <nav class="fixed bottom-0 left-0 right-0 z-40 bg-white border-t-2 border-slate-300 px-2 py-1.5 shadow-lg">
+    <div class="max-w-md mx-auto grid grid-cols-5 gap-1 text-center">
+      <button onclick="switchTab('today')" id="tabBtn-today" class="nav-tab-btn py-1 px-1 rounded-xl text-blue-700 flex flex-col items-center">
+        <i class="fa-solid fa-stopwatch text-base"></i>
+        <span class="text-[10px] font-black uppercase mt-0.5">Today</span>
+      </button>
+      <button onclick="switchTab('lectures')" id="tabBtn-lectures" class="nav-tab-btn py-1 px-1 rounded-xl text-slate-600 flex flex-col items-center">
+        <i class="fa-solid fa-video text-base"></i>
+        <span class="text-[10px] font-black uppercase mt-0.5">Lectures</span>
+      </button>
+      <button onclick="switchTab('syllabus')" id="tabBtn-syllabus" class="nav-tab-btn py-1 px-1 rounded-xl text-slate-600 flex flex-col items-center">
+        <i class="fa-solid fa-book-bookmark text-base"></i>
+        <span class="text-[10px] font-black uppercase mt-0.5">Syllabus</span>
+      </button>
+      <button onclick="switchTab('routine')" id="tabBtn-routine" class="nav-tab-btn py-1 px-1 rounded-xl text-slate-600 flex flex-col items-center">
+        <i class="fa-solid fa-calendar-day text-base"></i>
+        <span class="text-[10px] font-black uppercase mt-0.5">Routine</span>
+      </button>
+      <button onclick="switchTab('mocks')" id="tabBtn-mocks" class="nav-tab-btn py-1 px-1 rounded-xl text-slate-600 flex flex-col items-center">
+        <i class="fa-solid fa-award text-base"></i>
+        <span class="text-[10px] font-black uppercase mt-0.5">Mocks</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- MODAL 1: LOG LECTURE HOURS -->
+  <div id="lectureModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-3">
+    <div class="bg-white border-2 border-slate-900 rounded-3xl max-w-sm w-full p-4 sm:p-5 shadow-2xl space-y-3">
+      <div class="flex items-center justify-between pb-2 border-b-2 border-slate-200">
+        <h3 class="text-sm font-black text-slate-950 uppercase flex items-center gap-1.5">
+          <i class="fa-solid fa-video text-purple-700"></i> Log Lecture Hours
+        </h3>
+        <button onclick="toggleModal('lectureModal')" class="text-slate-500 hover:text-slate-950 text-base font-black">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <form onsubmit="handleSaveLecture(event)" class="space-y-3">
+        <div>
+          <label class="block text-[11px] font-black uppercase text-slate-800 mb-1">Paper</label>
+          <select id="lecPaper" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-950" required>
+            <option value="FR">Paper 1: Financial Reporting (FR)</option>
+            <option value="AFM">Paper 2: Adv. Financial Management (AFM)</option>
+            <option value="Audit">Paper 3: Adv. Auditing & Ethics</option>
+            <option value="DT">Paper 4: Direct Tax & Int. Tax (DT)</option>
+            <option value="IDT">Paper 5: Indirect Tax Laws (IDT)</option>
+            <option value="IBS">Paper 6: Integrated Business Solutions</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[11px] font-black uppercase text-slate-800 mb-1">Faculty / Teacher</label>
+            <input type="text" id="lecFACULTY" placeholder="e.g. Parveen Sharma / Bhavik Chokshi" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-950">
+          </div>
+          <div>
+            <label class="block text-[11px] font-black uppercase text-slate-800 mb-1">Date</label>
+            <input type="date" id="lecDate" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-950" required>
+          </div>
+        </div>
+        <div>
+          <label class="block text-[11px] font-black uppercase text-slate-800 mb-1">Topic / Lecture Number</label>
+          <input type="text" id="lecTopic" placeholder="e.g. Ind AS 115 Revenue - Class #12" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-950" required>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[11px] font-black uppercase text-slate-800 mb-1">Hours Watched</label>
+            <input type="number" step="0.1" min="0.1" max="15" id="lecHours" placeholder="e.g. 2.5" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl px-3 py-2 text-xs font-black text-slate-950" required>
+          </div>
+          <div>
+            <label class="block text-[11px] font-black uppercase text-slate-800 mb-1">Speed Multiplier</label>
+            <select id="lecSpeed" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl px-2.5 py-2 text-xs font-black text-slate-950">
+              <option value="1.0">1.0x (Normal)</option>
+              <option value="1.25">1.25x</option>
+              <option value="1.5" selected>1.5x</option>
+              <option value="1.75">1.75x</option>
+              <option value="2.0">2.0x</option>
+            </select>
+          </div>
+        </div>
+        <div class="pt-2 flex justify-end gap-2">
+          <button type="button" onclick="toggleModal('lectureModal')" class="px-3 py-1.5 bg-slate-200 text-slate-800 rounded-xl text-xs font-black">Cancel</button>
+          <button type="submit" class="px-4 py-1.5 bg-purple-700 hover:bg-purple-800 text-white rounded-xl text-xs font-black shadow">Save Class</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 2: EXAM DATE PICKER -->
+  <div id="dateModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-3">
+    <div class="bg-white border-2 border-slate-900 rounded-3xl max-w-xs w-full p-4 shadow-2xl space-y-3">
+      <div class="flex items-center justify-between pb-1 border-b-2 border-slate-200">
+        <h3 class="text-xs font-black uppercase text-slate-950">Edit Target Date</h3>
+        <button onclick="toggleModal('dateModal')" class="text-slate-500 font-black"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div>
-        <label class="text-xs font-semibold text-slate-600 block mb-1">Target Date & Time:</label>
-        <input type="datetime-local" id="modalExamDate" class="w-full border border-slate-300 rounded p-1.5 text-xs">
+        <label class="block text-[11px] font-bold text-slate-700 mb-1">Target Date & Time</label>
+        <input type="datetime-local" id="customExamDateInput" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-2 text-xs font-black text-slate-950">
       </div>
-      <div class="flex justify-end gap-2 pt-2">
-        <button onclick="closeExamModal()" class="px-3 py-1.5 text-xs font-semibold rounded bg-slate-100 hover:bg-slate-200">Cancel</button>
-        <button onclick="saveExamTarget()" class="px-3 py-1.5 text-xs font-semibold rounded bg-sky-600 text-white hover:bg-sky-700">Save Target</button>
+      <div class="flex justify-end gap-2 pt-1">
+        <button onclick="toggleModal('dateModal')" class="px-3 py-1 bg-slate-200 text-slate-800 rounded-xl text-xs font-bold">Cancel</button>
+        <button onclick="saveTargetDate()" class="px-3 py-1 bg-blue-700 text-white rounded-xl text-xs font-black">Save</button>
       </div>
     </div>
   </div>
 
-  <!-- SCRIPT ENGINE -->
+  <!-- MODAL 3: ADD TOPIC TO MATRIX -->
+  <div id="chapterModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-3">
+    <div class="bg-white border-2 border-slate-900 rounded-3xl max-w-sm w-full p-4 shadow-2xl space-y-3">
+      <div class="flex items-center justify-between pb-1 border-b-2 border-slate-200">
+        <h3 class="text-xs font-black uppercase text-slate-950">Add Topic to Syllabus</h3>
+        <button onclick="toggleModal('chapterModal')" class="text-slate-500 font-black"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="space-y-2">
+        <div>
+          <label class="block text-[11px] font-black uppercase text-slate-800 mb-1">Paper</label>
+          <select id="newTopicPaper" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-2 text-xs font-bold text-slate-950">
+            <option value="FR">Paper 1: FR</option>
+            <option value="AFM">Paper 2: AFM</option>
+            <option value="Audit">Paper 3: Audit</option>
+            <option value="DT">Paper 4: DT</option>
+            <option value="IDT">Paper 5: IDT</option>
+            <option value="IBS">Paper 6: IBS</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[11px] font-black uppercase text-slate-800 mb-1">Topic Name</label>
+          <input type="text" id="newTopicName" placeholder="e.g. Ind AS 102 Share-Based Payments" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-2 text-xs font-bold text-slate-950">
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="toggleModal('chapterModal')" class="px-3 py-1 bg-slate-200 text-slate-800 rounded-xl text-xs font-bold">Cancel</button>
+        <button onclick="saveNewTopic()" class="px-3 py-1 bg-blue-700 text-white rounded-xl text-xs font-black">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 4: LOG MOCK TEST -->
+  <div id="mockModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-3">
+    <div class="bg-white border-2 border-slate-900 rounded-3xl max-w-sm w-full p-4 shadow-2xl space-y-3">
+      <div class="flex items-center justify-between pb-1 border-b-2 border-slate-200">
+        <h3 class="text-xs font-black uppercase text-slate-950">Log 100-Marks Mock Test</h3>
+        <button onclick="toggleModal('mockModal')" class="text-slate-500 font-black"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="space-y-2">
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-800 mb-1">Paper</label>
+            <select id="mockPaperInput" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-2 text-xs font-black">
+              <option value="FR">FR (P1)</option>
+              <option value="AFM">AFM (P2)</option>
+              <option value="Audit">Audit (P3)</option>
+              <option value="DT">DT (P4)</option>
+              <option value="IDT">IDT (P5)</option>
+              <option value="IBS">IBS (P6)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-800 mb-1">Marks (/100)</label>
+            <input type="number" id="mockMarksInput" min="0" max="100" placeholder="65" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-2 text-xs font-black">
+          </div>
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-800 mb-1">Test Name / Source</label>
+          <input type="text" id="mockNameInput" placeholder="ICAI MTP Series 1" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-2 text-xs font-bold">
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-800 mb-1">Mistake Notebook Notes</label>
+          <textarea id="mockNotesInput" rows="2" placeholder="e.g. Lost 8 marks in Forex cancelation swap rates; revise rules" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-2 text-xs font-bold"></textarea>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="toggleModal('mockModal')" class="px-3 py-1 bg-slate-200 text-slate-800 rounded-xl text-xs font-bold">Cancel</button>
+        <button onclick="saveMockTest()" class="px-3 py-1 bg-blue-700 text-white rounded-xl text-xs font-black">Save Mock</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="fixed bottom-16 right-4 z-50 transform translate-y-24 transition duration-300 bg-slate-950 text-white px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-2 text-xs font-black pointer-events-none border border-slate-700">
+    <i class="fa-solid fa-circle-check text-emerald-400"></i>
+    <span id="toastMsg">Action saved!</span>
+  </div>
+
   <script>
-    // ----------------------------------------------------
-    // DATA CONSTANTS & INITIAL STATE
-    // ----------------------------------------------------
-    const PALETTE = [
-      { hex: "#D1FAE5", label: "Sage" },
-      { hex: "#E0F2FE", label: "Sky" },
-      { hex: "#FEF3C7", label: "Butter" },
-      { hex: "#FFE4E6", label: "Rose" },
-      { hex: "#EDE9FE", label: "Lavender" },
-      { hex: "#FFEDD5", label: "Peach" },
-      { hex: "#FFFFFF", label: "Clear" }
+    // CA Final Syllabus Default Topics
+    const DEFAULT_TOPICS = [
+      { id: 't1', paper: 'FR', name: 'Ind AS 115 - Revenue from Contracts', sm: true, qb: true, rtp: true, r1: true, r2: false },
+      { id: 't2', paper: 'FR', name: 'Ind AS 103 - Business Combinations', sm: true, qb: true, rtp: false, r1: false, r2: false },
+      { id: 't3', paper: 'FR', name: 'Ind AS 109 & 32 - Financial Instruments', sm: true, qb: true, rtp: true, r1: true, r2: true },
+      { id: 't4', paper: 'FR', name: 'Ind AS 116 - Leases', sm: true, qb: true, rtp: true, r1: true, r2: false },
+      { id: 't5', paper: 'AFM', name: 'Foreign Exchange Exposure & Risk', sm: true, qb: true, rtp: true, r1: true, r2: false },
+      { id: 't6', paper: 'AFM', name: 'Derivatives Analysis & Valuation', sm: true, qb: true, rtp: true, r1: true, r2: true },
+      { id: 't7', paper: 'AFM', name: 'Portfolio Management & Mutual Funds', sm: true, qb: true, rtp: false, r1: false, r2: false },
+      { id: 't8', paper: 'Audit', name: 'Standards on Auditing (200-700 Series)', sm: true, qb: true, rtp: true, r1: true, r2: false },
+      { id: 't9', paper: 'Audit', name: 'Professional Ethics & Code of Conduct', sm: true, qb: true, rtp: true, r1: true, r2: true },
+      { id: 't10', paper: 'DT', name: 'Profits and Gains of Business (PGBP)', sm: true, qb: true, rtp: true, r1: true, r2: false },
+      { id: 't11', paper: 'DT', name: 'Transfer Pricing & International Tax', sm: true, qb: true, rtp: true, r1: true, r2: true },
+      { id: 't12', paper: 'IDT', name: 'Input Tax Credit (ITC) Provisions', sm: true, qb: true, rtp: true, r1: true, r2: true },
+      { id: 't13', paper: 'IDT', name: 'Place of Supply & Value of Supply', sm: true, qb: true, rtp: true, r1: false, r2: false },
+      { id: 't14', paper: 'IBS', name: 'Multi-Disciplinary Case Studies', sm: true, qb: false, rtp: false, r1: false, r2: false }
     ];
 
-    const SUBJECT_MODULES = [
-      { code: "1. FR", name: "Financial Reporting", bg: "#E0F2FE", fg: "#0369A1", bd: "#7DD3FC" },
-      { code: "2. AFM", name: "Adv. Financial Mgmt", bg: "#DCFCE7", fg: "#15803D", bd: "#86EFAC" },
-      { code: "3. AUDIT", name: "Adv. Auditing & Ethics", bg: "#FEF3C7", fg: "#B45309", bd: "#FDE68A" },
-      { code: "4. DT", name: "Direct Tax & Int'l Tax", bg: "#FEE2E2", fg: "#B91C1C", bd: "#FCA5A5" },
-      { code: "5. IDT", name: "Goods & Services Tax", bg: "#F3E8FF", fg: "#7E22CE", bd: "#D8B4FE" },
-      { code: "SET A. LAW", name: "Corp & Economic Laws", bg: "#CFFAFE", fg: "#0E7490", bd: "#67E8F9" },
-      { code: "SET B. COST", name: "Strategic Cost Mgmt", bg: "#FCE7F3", fg: "#BE185D", bd: "#F9A8D4" }
-    ];
-
-    const WEEKLY_SLOTS = [
-      { id: "S1", label: "06:00 - 08:30 AM", hours: 2.5, tag: "Dawn Theory" },
-      { id: "S2", label: "09:00 - 12:00 PM", hours: 3.0, tag: "Core Analytical" },
-      { id: "S3", label: "02:00 - 06:00 PM", hours: 4.0, tag: "Heavy Practical" },
-      { id: "S4", label: "07:00 - 10:00 PM", hours: 3.0, tag: "Night Retention" }
-    ];
-
-    const WEEK_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-
-    // 155 LECTURE FR SYLLABUS DATASET
-    const FR_RAW = [
-      [1,"Professional And Ethical Duties Of Chartered Accountant","Part 1 - Set A"],
-      [2,"LV01_FR_Accounting And Technology","Part 1 - Set A"],[3,"LV01_FR_Application Of IND AS","Part 1 - Set A"],
-      [4,"LV01_FR_Conceptual Framework","Part 1 - Set A"],[5,"LV01_FR_Financial Instruments","Part 1 - Set A"],
-      [6,"LV02_FR_Financial Instruments","Part 1 - Set A"],[7,"LV03_FR_Financial Instruments","Part 1 - Set A"],
-      [8,"LV04_FR_Financial Instruments","Part 1 - Set A"],[9,"LV05_FR_Financial Instruments","Part 1 - Set A"],
-      [10,"LV06_FR_Financial Instruments","Part 1 - Set A"],[11,"LV07_FR_Financial Instruments","Part 1 - Set A"],
-      [12,"LV08_FR_Financial Instruments","Part 1 - Set A"],[13,"LV09_FR_Financial Instruments","Part 1 - Set A"],
-      [14,"LV10_FR_Financial Instruments","Part 1 - Set A"],[15,"LV11_FR_Financial Instruments","Part 1 - Set A"],
-      [16,"LV12_FR_Financial Instruments","Part 1 - Set A"],[17,"LV13_FR_Financial Instruments","Part 1 - Set A"],
-      [18,"LV14_FR_Financial Instruments","Part 1 - Set A"],[19,"LV15_FR_Financial Instruments","Part 1 - Set A"],
-      [20,"LV16_FR_Financial Instruments","Part 1 - Set A"],[21,"LV17_FR_Financial Instruments","Part 1 - Set B"],
-      [22,"LV18_FR_Financial Instruments","Part 1 - Set B"],[23,"LV19_FR_Financial Instruments","Part 1 - Set B"],
-      [24,"LV20_FR_Financial Instruments","Part 1 - Set B"],[25,"LV21A_FR_Financial Instruments","Part 1 - Set B"],
-      [26,"LV21B_FR_Financial Instruments","Part 1 - Set B"],[27,"LV22_FR_Schedule III","Part 1 - Set B"],
-      [28,"LV23_FR_Schedule III","Part 1 - Set B"],[29,"LV24_FR_Schedule III","Part 1 - Set B"],
-      [30,"LV25_FR_Schedule III","Part 1 - Set B"],[31,"LV26_FR_IND AS 1","Part 1 - Set B"],
-      [32,"LV27_FR_IND AS 1","Part 1 - Set B"],[33,"LV28A_FR_IND AS 1","Part 1 - Set B"],
-      [34,"LV28B_FR_IND AS 1","Part 1 - Set B"],[35,"LV29_FR_IND AS 33","Part 1 - Set B"],
-      [36,"LV30_FR_IND AS 33","Part 1 - Set B"],[37,"LV31_FR_IND AS 33","Part 1 - Set B"],
-      [38,"LV32_FR_IND AS 33","Part 1 - Set B"],[39,"LV33_FR_IND AS 33","Part 1 - Set B"],
-      [40,"LV34_FR_IND AS 33","Part 1 - Set B"],[41,"LV35_FR_IND AS 33","Part 1 - Set C"],
-      [42,"LV36_FR_IND AS 102","Part 1 - Set C"],[43,"LV37_FR_IND AS 102","Part 1 - Set C"],
-      [44,"LV38_FR_IND AS 102","Part 1 - Set C"],[45,"LV39_FR_IND AS 102","Part 1 - Set C"],
-      [46,"LV40_FR_IND AS 102","Part 1 - Set C"],[47,"LV41A_FR_IND AS 102","Part 1 - Set C"],
-      [48,"LV41B_FR_IND AS 102","Part 1 - Set C"],[49,"LV42_FR_IND AS 19","Part 1 - Set C"],
-      [50,"LV43_FR_IND AS 19","Part 1 - Set C"],[51,"LV44_FR_IND AS 19","Part 1 - Set C"],
-      [52,"LV45_FR_IND AS 19","Part 1 - Set C"],[53,"LV46_FR_IND AS 19","Part 1 - Set C"],
-      [54,"LV47_FR_IND AS 19","Part 1 - Set C"],[55,"LV48_FR_IND AS 113","Part 1 - Set C"],
-      [56,"LV49_FR_IND AS 113","Part 1 - Set C"],[57,"LV50_FR_IND AS 115","Part 1 - Set C"],
-      [58,"LV51_FR_IND AS 115","Part 1 - Set C"],[59,"LV52_FR_IND AS 115","Part 1 - Set C"],
-      [60,"LV53_FR_IND AS 115","Part 1 - Set D"],[61,"LV54A_FR_IND AS 115","Part 1 - Set D"],
-      [62,"LV54B_FR_IND AS 115 Homework Session 1","Part 1 - Set D"],[63,"LV55_FR_IND AS 115","Part 1 - Set D"],
-      [64,"LV56_FR_IND AS 115","Part 1 - Set D"],[65,"LV57A_FR_IND AS 115","Part 1 - Set D"],
-      [66,"LV57B_FR_IND AS 115_Revision & Homework Session 2","Part 1 - Set D"],
-      [67,"LV57C_FR_IND AS 15 Homework Session 3","Part 1 - Set D"],[68,"LV58_FR_IND AS 116","Part 1 - Set D"],
-      [69,"LV59_FR_IND AS 116","Part 1 - Set D"],[70,"LV60_FR_IND AS 116","Part 1 - Set D"],
-      [71,"LV61_FR_IND AS 116","Part 1 - Set D"],[72,"LV62_FR_IND AS 116","Part 1 - Set D"],
-      [73,"LV63_FR_IND AS 116","Part 1 - Set D"],[74,"LV64_FR_IND AS 116","Part 1 - Set D"],
-      [75,"LV65_FR_IND AS 116","Part 1 - Set D"],[76,"LV66_FR_IND AS 116","Part 1 - Set D"],
-      [77,"LV67_FR_IND AS 116","Part 1 - Set D"],[78,"LV68_FR_IND AS 16","Part 1 - Set D"],
-      [79,"LV69_FR_IND AS 16","Part 2 - Set A"],[80,"LV70_FR_IND AS 16","Part 2 - Set A"],
-      [81,"LV71_FR_IND AS 16","Part 2 - Set A"],[82,"LV72A_FR_IND AS 16","Part 2 - Set A"],
-      [83,"LV72B_FR_IND AS 16 Homework and Query Session","Part 2 - Set A"],
-      [84,"LV73_FR_IND AS 105","Part 2 - Set A"],[85,"LV74_FR_IND AS 105","Part 2 - Set A"],
-      [86,"LV75_FR_IND AS 40","Part 2 - Set A"],[87,"LV76_FR_IND AS 41","Part 2 - Set A"],
-      [88,"LV77_FR_IND AS 41","Part 2 - Set A"],[89,"LV78_FR_IND AS 103","Part 2 - Set A"],
-      [90,"LV79_FR_IND AS 103","Part 2 - Set A"],[91,"LV80_FR_IND AS 103","Part 2 - Set A"],
-      [92,"LV81_FR_IND AS 103","Part 2 - Set A"],[93,"LV82_FR_IND AS 103","Part 2 - Set A"],
-      [94,"LV83_FR_IND AS 103","Part 2 - Set A"],[95,"LV84_FR_IND AS 103","Part 2 - Set A"],
-      [96,"LV85_FR_IND AS 103","Part 2 - Set A"],[97,"LV86_FR_IND AS 103","Part 2 - Set A"],
-      [98,"LV87_FR_IND AS 103","Part 2 - Set A"],[99,"LV88_FR_IND AS 27","Part 2 - Set B"],
-      [100,"LV89A_FR_IND AS 110","Part 2 - Set B"],[101,"LV89B_FR_IND AS 110","Part 2 - Set B"],
-      [102,"LV90_FR_IND AS 110","Part 2 - Set B"],[103,"LV91_FR_IND AS 110","Part 2 - Set B"],
-      [104,"LV92A_FR_IND AS 110","Part 2 - Set B"],[105,"LV92B_FR_IND AS 110 Homework Session","Part 2 - Set B"],
-      [106,"LV93_FR_IND AS 110","Part 2 - Set B"],[107,"LV94_FR_IND AS 110","Part 2 - Set B"],
-      [108,"LV95_FR_IND AS 110","Part 2 - Set B"],[109,"LV96_FR_IND AS 110","Part 2 - Set B"],
-      [110,"LV97_FR_IND AS 110","Part 2 - Set B"],[111,"LV98_FR_IND AS 28","Part 2 - Set B"],
-      [112,"LV99_FR_IND AS 28","Part 2 - Set B"],[113,"LV100_FR_IND AS 28","Part 2 - Set B"],
-      [114,"LV101A_FR_IND AS 111 And 112","Part 2 - Set B"],[115,"LV101B_FR_IND AS 112","Part 2 - Set B"],
-      [116,"LV102_FR_IND AS 21","Part 2 - Set B"],[117,"LV103_FR_IND AS 21","Part 2 - Set B"],
-      [118,"LV104_FR_IND AS 21","Part 2 - Set C"],[119,"LV105_FR_IND AS 24","Part 2 - Set C"],
-      [120,"LV106_FR_IND AS 20","Part 2 - Set C"],[121,"LV107A_FR_IND AS 108","Part 2 - Set C"],
-      [122,"LV107B_FR_IND AS 108","Part 2 - Set C"],[123,"LV108A_FR_IND AS 34","Part 2 - Set C"],
-      [124,"LV108B_FR_IND AS 34","Part 2 - Set C"],[125,"LV109_FR_IND AS 34","Part 2 - Set C"],
-      [126,"LV110A_FR_IND AS 37","Part 2 - Set C"],[127,"LV110B_FR_IND AS 37","Part 2 - Set C"],
-      [128,"LV111A_FR_IND AS 38","Part 2 - Set C"],[129,"LV111B_FR_IND AS 38","Part 2 - Set C"],
-      [130,"LV112_FR_IND AS 38","Part 2 - Set C"],[131,"LV113_FR_IND AS 2","Part 2 - Set C"],
-      [132,"LV114_FR_IND AS 2","Part 2 - Set C"],[133,"LV115A_FR_IND AS 7","Part 2 - Set C"],
-      [134,"LV115B_FR_IND AS 7","Part 2 - Set C"],[135,"LV116_FR_IND AS 7","Part 2 - Set C"],
-      [136,"LV117_FR_IND AS 7","Part 2 - Set C"],[137,"LV118A_FR_IND AS 8","Part 2 - Set D"],
-      [138,"LV118B_FR_IND AS 8","Part 2 - Set D"],[139,"LV119_FR_IND AS 8","Part 2 - Set D"],
-      [140,"LV120A_FR_IND AS 10","Part 2 - Set D"],[141,"LV120B_FR_IND AS 10","Part 2 - Set D"],
-      [142,"LV121AB_FR_IND AS 23","Part 2 - Set D"],[143,"LV122_FR_IND AS 23","Part 2 - Set D"],
-      [144,"LV123_FR_IND AS 23","Part 2 - Set D"],[145,"LV124_FR_IND AS 101","Part 2 - Set D"],
-      [146,"LV125_FR_IND AS 101","Part 2 - Set D"],[147,"LV126A_FR_IND AS 36","Part 2 - Set D"],
-      [148,"LV126B_FR_IND AS 36","Part 2 - Set D"],[149,"LV127_FR_IND AS 36","Part 2 - Set D"],
-      [150,"LV128_FR_IND AS 36","Part 2 - Set D"],[151,"LV129_FR_IND AS 36","Part 2 - Set D"],
-      [152,"LV130_FR_IND AS 12","Part 2 - Set D"],[153,"LV131_FR_IND AS 12","Part 2 - Set D"],
-      [154,"LV132_FR_IND AS 12","Part 2 - Set D"],[155,"LV133_FR_IND AS 12","Part 2 - Set D"]
-    ];
-
-    // LocalStorage State Controllers
-    let examSettings = JSON.parse(localStorage.getItem("ca_exam_settings")) || {
-      name: "CA Final Examination",
-      target: new Date(Date.now() + 60 * 24 * 3600 * 1000).toISOString().slice(0, 16)
+    // Standard Lecture Budget Allocation
+    const LECTURE_BUDGETS = {
+      FR: 180,
+      AFM: 130,
+      Audit: 100,
+      DT: 160,
+      IDT: 120,
+      IBS: 60
     };
 
-    let calendarColors = JSON.parse(localStorage.getItem("ca_cal_colors")) || {};
-    let activePaintbrush = PALETTE[0].hex;
+    // CA Final 12-Hour Schedule
+    const DEFAULT_ROUTINE = [
+      { id: 'r1', time: '06:00 AM - 08:30 AM', title: 'Slot 1: Audit Standards / Professional Ethics Recall', paper: 'Audit', done: true },
+      { id: 'r2', time: '08:30 AM - 09:30 AM', title: 'Breakfast, Walk & Hydration Break', paper: 'General', done: true },
+      { id: 'r3', time: '09:30 AM - 01:00 PM', title: 'Slot 2: Financial Reporting (FR) / AFM Hard Practical Sums', paper: 'FR', done: false },
+      { id: 'r4', time: '01:00 PM - 02:00 PM', title: 'Light Lunch & 20-min Power Nap', paper: 'General', done: false },
+      { id: 'r5', time: '02:00 PM - 05:00 PM', title: 'Slot 3 [EXAM CONDITION]: 3-Hour Full Mock or Intensive DT Practice', paper: 'Exam Slot', done: false },
+      { id: 'r6', time: '05:00 PM - 05:45 PM', title: 'Tea / Coffee & Outdoor Stretch', paper: 'General', done: false },
+      { id: 'r7', time: '05:45 PM - 08:30 PM', title: 'Slot 4: Direct Tax (DT) Case Laws & International Taxation', paper: 'DT', done: false },
+      { id: 'r8', time: '08:30 PM - 09:30 PM', title: 'Dinner & Family Time', paper: 'General', done: false },
+      { id: 'r9', time: '09:30 PM - 11:15 PM', title: 'Slot 5: Indirect Tax (IDT) / Fast-track Video Class', paper: 'IDT', done: false },
+      { id: 'r10', time: '11:15 PM - 06:00 AM', title: 'Uninterrupted Sleep (7 Hours for memory retention)', paper: 'General', done: false }
+    ];
 
-    let weeklySchedule = JSON.parse(localStorage.getItem("ca_weekly_vault")) || {};
-    WEEK_DAYS.forEach(d => {
-      if (!weeklySchedule[d]) weeklySchedule[d] = {};
-      WEEKLY_SLOTS.forEach(s => {
-        if (!weeklySchedule[d][s.label]) weeklySchedule[d][s.label] = null;
-      });
-    });
+    // State Variables
+    let appState = {
+      targetExamDate: '2027-05-02T14:00',
+      topics: DEFAULT_TOPICS,
+      routine: DEFAULT_ROUTINE,
+      tasks: [
+        { id: 'tk1', text: 'Solve 6 comprehensive problems on Ind AS 115', paper: 'FR', priority: 'High', done: false },
+        { id: 'tk2', text: 'Revise SA 500, 501, 505 Audit evidence', paper: 'Audit', priority: 'High', done: true },
+        { id: 'tk3', text: 'Watch 2 AFM Forex Arbitrage video lectures', paper: 'AFM', priority: 'Medium', done: false }
+      ],
+      lectures: [
+        { id: 'l1', paper: 'FR', faculty: 'CA Parveen Sharma', topic: 'Ind AS 115 Step 3 & 4', hours: 3.0, speed: 1.5, effectiveHours: 2.0, date: new Date().toISOString().split('T')[0] },
+        { id: 'l2', paper: 'DT', faculty: 'CA Bhanwar Borana', topic: 'PGBP Section 43B amendments', hours: 2.5, speed: 1.25, effectiveHours: 2.0, date: new Date().toISOString().split('T')[0] }
+      ],
+      mocks: [
+        { id: 'm1', paper: 'FR', name: 'ICAI MTP Series 1', marks: 68, notes: 'Good consolidation work. Missed 4 marks in carving adjustment.' }
+      ],
+      selfStudyMinutesToday: 180
+    };
 
-    let subjectLogs = JSON.parse(localStorage.getItem("ca_subject_logs")) || [];
-    let frData = JSON.parse(localStorage.getItem("ca_fr_data")) || {};
+    let activeSyllabusFilter = 'All';
 
-    // Populate initial FR state if absent
-    FR_RAW.forEach(([num, title, group]) => {
-      const k = String(num);
-      if (!frData[k]) {
-        frData[k] = { num, title, group, watched: false, watch_date: "", watch_minutes: 0, rev1: false, rev2: false, rev3: false, note: "" };
+    function loadData() {
+      try {
+        const stored = localStorage.getItem('ca_final_hub_v1');
+        if (stored) {
+          appState = { ...appState, ...JSON.parse(stored) };
+        }
+      } catch (e) {
+        console.error('Error loading local data', e);
       }
-    });
-
-    // ----------------------------------------------------
-    // INITIALIZATION & TAB SWITCHING
-    // ----------------------------------------------------
-    window.addEventListener("DOMContentLoaded", () => {
-      updateExamHeader();
-      setInterval(updateCountdownTicker, 1000);
-      initCalendarPalette();
-      renderCalendar();
-      initWeeklyTimetable();
-      renderLogTable();
-      setLogToday();
-      renderFRTable();
-      updateFRStats();
-    });
-
-    function switchTab(tabId) {
-      document.querySelectorAll(".tab-pane").forEach(el => el.classList.add("hidden"));
-      document.querySelectorAll(".tab-btn").forEach(el => {
-        el.classList.remove("border-sky-600", "text-sky-600");
-        el.classList.add("border-transparent", "text-slate-600");
-      });
-      document.getElementById(tabId).classList.remove("hidden");
-      const activeBtn = document.getElementById("btn-" + tabId);
-      activeBtn.classList.add("border-sky-600", "text-sky-600");
-      activeBtn.classList.remove("border-transparent", "text-slate-600");
     }
 
-    // ----------------------------------------------------
-    // 1. COUNTDOWN HEADER ENGINE
-    // ----------------------------------------------------
-    function updateExamHeader() {
-      document.getElementById("examTitleDisplay").innerText = examSettings.name;
-      document.getElementById("examTargetDisplay").innerText = "Target: " + examSettings.target.replace("T", " ");
+    function saveData() {
+      try {
+        localStorage.setItem('ca_final_hub_v1', JSON.stringify(appState));
+      } catch (e) {
+        console.error('Error saving local data', e);
+      }
     }
 
-    function updateCountdownTicker() {
-      const targetTime = new Date(examSettings.target).getTime();
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').innerText = msg;
+      toast.classList.remove('translate-y-24');
+      setTimeout(() => toast.classList.add('translate-y-24'), 2500);
+    }
+
+    function updateCountdown() {
+      const target = new Date(appState.targetExamDate).getTime();
       const now = new Date().getTime();
-      const diff = targetTime - now;
+      const diff = target - now;
 
       if (diff <= 0) {
-        document.getElementById("tileDays").innerText = "00";
-        document.getElementById("tileHours").innerText = "00";
-        document.getElementById("tileMins").innerText = "00";
-        document.getElementById("tileSecs").innerText = "00";
+        document.getElementById('daysCount').innerText = "00";
+        document.getElementById('hoursCount').innerText = "00";
+        document.getElementById('minsCount').innerText = "00";
         return;
       }
 
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const secs = Math.floor((diff % (1000 * 60)) / 1000);
+      const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
 
-      document.getElementById("tileDays").innerText = String(days).padStart(2, '0');
-      document.getElementById("tileHours").innerText = String(hours).padStart(2, '0');
-      document.getElementById("tileMins").innerText = String(mins).padStart(2, '0');
-      document.getElementById("tileSecs").innerText = String(secs).padStart(2, '0');
+      document.getElementById('daysCount').innerText = String(d).padStart(2, '0');
+      document.getElementById('hoursCount').innerText = String(h).padStart(2, '0');
+      document.getElementById('minsCount').innerText = String(m).padStart(2, '0');
     }
 
-    function openExamModal() {
-      document.getElementById("modalExamName").value = examSettings.name;
-      document.getElementById("modalExamDate").value = examSettings.target;
-      document.getElementById("examModal").classList.remove("hidden");
-    }
-
-    function closeExamModal() {
-      document.getElementById("examModal").classList.add("hidden");
-    }
-
-    function saveExamTarget() {
-      const nm = document.getElementById("modalExamName").value.trim() || "CA Final Examination";
-      const dt = document.getElementById("modalExamDate").value;
-      if (!dt) return alert("Select a valid date");
-      examSettings = { name: nm, target: dt };
-      localStorage.setItem("ca_exam_settings", JSON.stringify(examSettings));
-      updateExamHeader();
-      renderCalendar();
-      closeExamModal();
-    }
-
-    // ----------------------------------------------------
-    // 2. VISUAL COLOR CALENDAR
-    // ----------------------------------------------------
-    let currentCalDate = new Date();
-
-    function initCalendarPalette() {
-      const cont = document.getElementById("paletteChips");
-      cont.innerHTML = "";
-      PALETTE.forEach(p => {
-        const item = document.createElement("div");
-        item.className = "flex items-center gap-1.5 cursor-pointer border border-slate-300 rounded px-2 py-1 drag-chip hover:shadow-sm";
-        item.style.backgroundColor = p.hex;
-        item.draggable = true;
-        item.innerHTML = `<span class="text-xs font-bold text-slate-700">${p.label}</span>`;
-        item.onclick = () => {
-          activePaintbrush = p.hex;
-          document.querySelectorAll("#paletteChips > div").forEach(d => d.classList.remove("ring-2", "ring-sky-500"));
-          item.classList.add("ring-2", "ring-sky-500");
-        };
-        item.ondragstart = (e) => {
-          e.dataTransfer.setData("color", p.hex);
-        };
-        cont.appendChild(item);
-      });
-      cont.firstChild.classList.add("ring-2", "ring-sky-500");
-    }
-
-    function changeMonth(delta) {
-      currentCalDate.setMonth(currentCalDate.getMonth() + delta);
-      renderCalendar();
-    }
-
-    function renderCalendar() {
-      const year = currentCalDate.getFullYear();
-      const month = currentCalDate.getMonth();
-      const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-      document.getElementById("calendarMonthTitle").innerText = `${monthNames[month]} ${year}`;
-
-      const grid = document.getElementById("calendarGrid");
-      grid.innerHTML = "";
-
-      const firstDayIdx = (new Date(year, month, 1).getDay() + 6) % 7; // Align Monday to index 0
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-      for (let i = 0; i < firstDayIdx; i++) {
-        const blank = document.createElement("div");
-        blank.className = "h-20 bg-slate-50/50 rounded border border-transparent";
-        grid.appendChild(blank);
+    function saveTargetDate() {
+      const val = document.getElementById('customExamDateInput').value;
+      if (val) {
+        appState.targetExamDate = val;
+        saveData();
+        updateCountdown();
+        toggleModal('dateModal');
+        showToast('Exam date updated!');
       }
+    }
 
-      const todayStr = new Date().toISOString().slice(0, 10);
-      const examStr = examSettings.target.slice(0, 10);
+    // Timer Variables
+    let timerInterval = null;
+    let timerRemainingSeconds = 90 * 60;
+    let timerInitialSeconds = 90 * 60;
+    let isTimerActive = false;
+    let activeTimerPaper = 'Paper 1: FR';
 
-      for (let d = 1; d <= daysInMonth; d++) {
-        const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-        const dayCell = document.createElement("div");
-        const isToday = dateKey === todayStr;
-        const isExam = dateKey === examStr;
-        const assignedColor = calendarColors[dateKey] || "#FFFFFF";
+    function playBeep() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(659.25, ctx.currentTime); // E5
+        osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.35); // A5
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.6);
+      } catch (e) {}
+    }
 
-        dayCell.className = `h-20 p-1.5 rounded border flex flex-col justify-between text-xs cursor-pointer drop-target ${
-          isExam ? "border-sky-600 ring-2 ring-sky-400 font-bold" : (isToday ? "border-amber-500 ring-1 ring-amber-400 font-bold" : "border-slate-200")
-        }`;
-        dayCell.style.backgroundColor = assignedColor;
+    function updateTimerUI() {
+      const m = Math.floor(timerRemainingSeconds / 60);
+      const s = timerRemainingSeconds % 60;
+      document.getElementById('timerDisplay').innerText = 
+        `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
 
-        dayCell.innerHTML = `
-          <div class="flex justify-between items-start">
-            <span class="text-slate-800 font-bold">${d}</span>
-            ${isExam ? '<span class="text-[9px] bg-sky-600 text-white px-1 rounded">EXAM</span>' : ''}
-            ${isToday ? '<span class="text-[9px] bg-amber-500 text-white px-1 rounded">Today</span>' : ''}
+    function selectTimerPaper(paper) {
+      activeTimerPaper = paper;
+      document.querySelectorAll('.timer-paper-btn').forEach(btn => {
+        if (btn.dataset.paper === paper) {
+          btn.className = 'timer-paper-btn py-1.5 px-2 rounded-xl text-xs font-black border-2 border-blue-600 bg-blue-600 text-white';
+        } else {
+          btn.className = 'timer-paper-btn py-1.5 px-2 rounded-xl text-xs font-black border-2 border-slate-300 bg-slate-50 text-slate-800';
+        }
+      });
+      document.getElementById('sessionModeLabel').innerText = `${paper} - Active Practice`;
+    }
+
+    function setTimerDuration(mins, label) {
+      if (isTimerActive) toggleTimer();
+      timerInitialSeconds = mins * 60;
+      timerRemainingSeconds = timerInitialSeconds;
+      document.getElementById('sessionModeLabel').innerText = `${activeTimerPaper} - ${label}`;
+      updateTimerUI();
+    }
+
+    function toggleTimer() {
+      if (isTimerActive) {
+        clearInterval(timerInterval);
+        isTimerActive = false;
+        document.getElementById('startTimerBtn').innerHTML = `<i class="fa-solid fa-play"></i> <span>Resume</span>`;
+        document.getElementById('timerBadge').innerText = 'Paused';
+        document.getElementById('timerBadge').className = 'text-[10px] font-black uppercase bg-amber-100 text-amber-900 px-2.5 py-1 rounded-full border border-amber-300';
+      } else {
+        isTimerActive = true;
+        document.getElementById('startTimerBtn').innerHTML = `<i class="fa-solid fa-pause"></i> <span>Pause</span>`;
+        document.getElementById('timerBadge').innerText = 'Deep Focus';
+        document.getElementById('timerBadge').className = 'text-[10px] font-black uppercase bg-emerald-100 text-emerald-900 px-2.5 py-1 rounded-full border border-emerald-300';
+
+        timerInterval = setInterval(() => {
+          if (timerRemainingSeconds > 0) {
+            timerRemainingSeconds--;
+            updateTimerUI();
+          } else {
+            clearInterval(timerInterval);
+            isTimerActive = false;
+            playBeep();
+            handleTimerComplete();
+          }
+        }, 1000);
+      }
+    }
+
+    function resetTimer() {
+      if (isTimerActive) toggleTimer();
+      timerRemainingSeconds = timerInitialSeconds;
+      updateTimerUI();
+      document.getElementById('startTimerBtn').innerHTML = `<i class="fa-solid fa-play"></i> <span>Start Session</span>`;
+      document.getElementById('timerBadge').innerText = 'Ready';
+      document.getElementById('timerBadge').className = 'text-[10px] font-black uppercase bg-slate-100 text-slate-800 px-2.5 py-1 rounded-full border border-slate-300';
+    }
+
+    function handleTimerComplete() {
+      const mins = Math.floor(timerInitialSeconds / 60);
+      appState.selfStudyMinutesToday = (appState.selfStudyMinutesToday || 0) + mins;
+      saveData();
+      renderStats();
+      showToast(`Bravo! ${mins}m Deep work logged!`);
+      resetTimer();
+    }
+
+    // Lecture Watch Tracker Logic
+    function handleSaveLecture(e) {
+      e.preventDefault();
+      const paper = document.getElementById('lecPaper').value;
+      const faculty = document.getElementById('lecFACULTY').value.trim() || 'Self Study Video';
+      const date = document.getElementById('lecDate').value;
+      const topic = document.getElementById('lecTopic').value.trim();
+      const rawHours = parseFloat(document.getElementById('lecHours').value) || 0;
+      const speed = parseFloat(document.getElementById('lecSpeed').value) || 1.0;
+
+      if (!topic || rawHours <= 0) return;
+
+      // Effective viewing time if watched at higher speed (e.g. 3 hours lecture watched at 1.5x takes 2 hours clock time)
+      const effectiveHours = parseFloat((rawHours / speed).toFixed(2));
+
+      const newLecture = {
+        id: 'lec_' + Date.now(),
+        paper: paper,
+        faculty: faculty,
+        date: date,
+        topic: topic,
+        hours: rawHours,
+        speed: speed,
+        effectiveHours: effectiveHours
+      };
+
+      appState.lectures.unshift(newLecture);
+      saveData();
+      renderLectures();
+      renderStats();
+      toggleModal('lectureModal');
+      document.getElementById('lecTopic').value = '';
+      document.getElementById('lecHours').value = '';
+      showToast(`${rawHours}h lecture for ${paper} logged!`);
+    }
+
+    function deleteLecture(id) {
+      appState.lectures = appState.lectures.filter(l => l.id !== id);
+      saveData();
+      renderLectures();
+      renderStats();
+      showToast('Lecture entry deleted');
+    }
+
+    function renderLectures() {
+      const container = document.getElementById('lectureLogsContainer');
+      const budgetsContainer = document.getElementById('paperLectureBudgets');
+      container.innerHTML = '';
+      budgetsContainer.innerHTML = '';
+
+      const todayStr = new Date().toISOString().split('T')[0];
+      let totalHoursAll = 0;
+      let todayHoursAll = 0;
+
+      const paperTotals = { FR: 0, AFM: 0, Audit: 0, DT: 0, IDT: 0, IBS: 0 };
+
+      appState.lectures.forEach(l => {
+        totalHoursAll += l.hours;
+        if (l.date === todayStr) {
+          todayHoursAll += l.hours;
+        }
+        if (paperTotals[l.paper] !== undefined) {
+          paperTotals[l.paper] += l.hours;
+        }
+      });
+
+      document.getElementById('totalLectureHoursAll').innerText = `${totalHoursAll.toFixed(1)} hrs`;
+      document.getElementById('todayLectureHoursAll').innerText = `${todayHoursAll.toFixed(1)} hrs`;
+      document.getElementById('totalLectureCount').innerText = appState.lectures.length;
+
+      // Render paper budget progress cards
+      Object.keys(LECTURE_BUDGETS).forEach(paper => {
+        const watched = paperTotals[paper] || 0;
+        const budget = LECTURE_BUDGETS[paper];
+        const pct = Math.min(100, Math.round((watched / budget) * 100));
+
+        let color = 'bg-blue-600 text-blue-900 border-blue-200';
+        if (paper === 'AFM') color = 'bg-indigo-600 text-indigo-900 border-indigo-200';
+        if (paper === 'Audit') color = 'bg-amber-600 text-amber-900 border-amber-200';
+        if (paper === 'DT') color = 'bg-emerald-600 text-emerald-900 border-emerald-200';
+        if (paper === 'IDT') color = 'bg-rose-600 text-rose-900 border-rose-200';
+        if (paper === 'IBS') color = 'bg-purple-600 text-purple-900 border-purple-200';
+
+        const card = document.createElement('div');
+        card.className = 'p-3 rounded-2xl bg-slate-50 border-2 border-slate-200';
+        card.innerHTML = `
+          <div class="flex items-center justify-between text-xs font-black">
+            <span class="text-slate-950 font-black">${paper} Classes</span>
+            <span class="font-mono text-slate-800">${watched.toFixed(1)} / ${budget}h (${pct}%)</span>
+          </div>
+          <div class="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden mt-1.5 border border-slate-300">
+            <div class="${color.split(' ')[0]} h-full rounded-full transition-all duration-300" style="width: ${pct}%"></div>
           </div>
         `;
+        budgetsContainer.appendChild(card);
+      });
 
-        dayCell.onclick = () => {
-          if (activePaintbrush === "#FFFFFF") {
-            delete calendarColors[dateKey];
-          } else {
-            calendarColors[dateKey] = activePaintbrush;
-          }
-          localStorage.setItem("ca_cal_colors", JSON.stringify(calendarColors));
-          renderCalendar();
-        };
-
-        dayCell.ondragover = (e) => { e.preventDefault(); dayCell.classList.add("drag-over"); };
-        dayCell.ondragleave = () => dayCell.classList.remove("drag-over");
-        dayCell.ondrop = (e) => {
-          e.preventDefault();
-          dayCell.classList.remove("drag-over");
-          const col = e.dataTransfer.getData("color");
-          if (col) {
-            if (col === "#FFFFFF") delete calendarColors[dateKey];
-            else calendarColors[dateKey] = col;
-            localStorage.setItem("ca_cal_colors", JSON.stringify(calendarColors));
-            renderCalendar();
-          }
-        };
-
-        grid.appendChild(dayCell);
+      // Render History list
+      if (appState.lectures.length === 0) {
+        container.innerHTML = `<div class="p-6 text-center text-xs font-bold text-slate-500">No lectures recorded yet. Tap "+ Log Lecture" to track video classes!</div>`;
+        return;
       }
-    }
 
-    // ----------------------------------------------------
-    // 3. WEEKLY TIMETABLE & STOPWATCH
-    // ----------------------------------------------------
-    let timerRunning = false;
-    let timerInterval = null;
-    let timerSeconds = 0;
-    let activeSlot = null; // { day, slot }
-
-    function initWeeklyTimetable() {
-      // Course modules
-      const modContainer = document.getElementById("subjectModulesContainer");
-      modContainer.innerHTML = "";
-      SUBJECT_MODULES.forEach(sub => {
-        const card = document.createElement("div");
-        card.className = "p-2 rounded border drag-chip flex flex-col";
-        card.style.backgroundColor = sub.bg;
-        card.style.borderColor = sub.bd;
-        card.draggable = true;
-        card.innerHTML = `
-          <span class="font-bold text-xs" style="color:${sub.fg}">${sub.code}</span>
-          <span class="text-[10px]" style="color:${sub.fg}">${sub.name}</span>
-        `;
-        card.ondragstart = (e) => {
-          e.dataTransfer.setData("application/json", JSON.stringify({ code: sub.code }));
-        };
-        modContainer.appendChild(card);
-      });
-
-      renderWeeklyGrid();
-      refreshKPIs();
-    }
-
-    function renderWeeklyGrid() {
-      const matrix = document.getElementById("timetableMatrix");
-      let html = `
-        <div class="grid grid-cols-8 bg-slate-100 font-bold border-b border-slate-200 text-center">
-          <div class="p-2 border-r border-slate-200">SLOT</div>
-          ${WEEK_DAYS.map(d => `<div class="p-2 border-r border-slate-200 last:border-r-0">${d.toUpperCase()}</div>`).join('')}
-        </div>
-      `;
-
-      WEEKLY_SLOTS.forEach(slot => {
-        html += `
-          <div class="grid grid-cols-8 border-b border-slate-200 min-h-[75px]">
-            <div class="p-2 border-r border-slate-200 bg-slate-50 font-bold text-[11px] text-sky-700 flex flex-col justify-center text-center">
-              <span>${slot.label}</span>
-              <span class="text-[9px] text-slate-500 font-normal">(${slot.hours}h - ${slot.tag})</span>
+      appState.lectures.forEach(lec => {
+        const item = document.createElement('div');
+        item.className = 'p-3 rounded-2xl border-2 border-slate-200 bg-white flex items-center justify-between gap-2 shadow-sm';
+        item.innerHTML = `
+          <div class="flex items-center gap-2.5 overflow-hidden">
+            <div class="w-9 h-9 rounded-xl bg-purple-100 text-purple-900 font-black text-xs flex items-center justify-center flex-shrink-0 border border-purple-300">
+              ${lec.paper}
             </div>
-        `;
-
-        WEEK_DAYS.forEach(day => {
-          const item = weeklySchedule[day][slot.label];
-          const isActive = activeSlot && activeSlot.day === day && activeSlot.slot === slot.label;
-          let cellStyle = "background-color:#FFFFFF;";
-          let content = `<span class="text-slate-400 italic">Unassigned</span>`;
-
-          if (item) {
-            const meta = SUBJECT_MODULES.find(m => m.code === item.code) || { bg: "#f1f5f9", fg: "#0f172a", bd: "#cbd5e1" };
-            cellStyle = `background-color:${meta.bg}; border-color:${meta.bd};`;
-            const varGap = (item.actual || 0) - slot.hours;
-            const varStr = (item.actual || 0) > 0 ? `(${varGap > 0 ? '+' : ''}${varGap.toFixed(1)}h)` : '';
-            content = `
-              <div class="font-bold" style="color:${meta.fg}">${item.code}</div>
-              <div class="text-[10px] text-slate-600 truncate">${item.topic || ''}</div>
-              <div class="text-[10px] font-bold mt-1 text-slate-700">${item.actual || 0}h / ${slot.hours}h <span class="${varGap >= 0 ? 'text-emerald-700' : 'text-rose-700'}">${varStr}</span></div>
-            `;
-          }
-
-          html += `
-            <div class="p-1.5 border-r border-slate-200 last:border-r-0 drop-target flex flex-col justify-between cursor-pointer ${isActive ? 'ring-2 ring-sky-500' : ''}" 
-                 style="${cellStyle}"
-                 onclick="selectSlot('${day}', '${slot.label}')"
-                 ondblclick="editSlotPrompt('${day}', '${slot.label}')"
-                 ondragover="event.preventDefault(); this.classList.add('drag-over')"
-                 ondragleave="this.classList.remove('drag-over')"
-                 ondrop="onSlotDrop(event, '${day}', '${slot.label}', ${slot.hours})">
-              ${content}
+            <div class="truncate">
+              <div class="text-xs font-black text-slate-950 truncate">${lec.topic}</div>
+              <div class="text-[10px] font-bold text-slate-600 flex items-center gap-1.5 mt-0.5">
+                <span>${lec.faculty}</span>
+                <span>•</span>
+                <span class="font-mono text-purple-900">${lec.date}</span>
+                <span>•</span>
+                <span class="bg-purple-100 text-purple-900 px-1.5 py-0.2 rounded font-black text-[9px]">${lec.speed}x speed</span>
+              </div>
             </div>
-          `;
-        });
-
-        html += `</div>`;
+          </div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <div class="text-right">
+              <div class="text-xs font-black font-mono text-purple-950">${lec.hours}h</div>
+              <div class="text-[9px] font-bold text-slate-500">clock: ${lec.effectiveHours}h</div>
+            </div>
+            <button onclick="deleteLecture('${lec.id}')" class="text-slate-400 hover:text-red-600 p-1">
+              <i class="fa-regular fa-trash-can text-xs"></i>
+            </button>
+          </div>
+        `;
+        container.appendChild(item);
       });
-
-      matrix.innerHTML = html;
     }
 
-    function onSlotDrop(e, day, slotLabel, defaultHours) {
+    // Daily Targets / Tasks Logic
+    function renderTasks() {
+      const container = document.getElementById('taskListContainer');
+      const counter = document.getElementById('taskDoneCounter');
+      container.innerHTML = '';
+
+      const completed = appState.tasks.filter(t => t.done).length;
+      counter.innerText = `${completed}/${appState.tasks.length} done`;
+
+      if (appState.tasks.length === 0) {
+        container.innerHTML = `<div class="p-3 text-center text-xs font-bold text-slate-400">No tasks added today. Keep 3-5 solid targets!</div>`;
+        return;
+      }
+
+      appState.tasks.forEach(task => {
+        const el = document.createElement('div');
+        el.className = `p-2.5 rounded-2xl border-2 flex items-center justify-between gap-2 transition ${task.done ? 'bg-slate-50 border-slate-200 text-slate-400' : 'bg-white border-slate-300 text-slate-950 shadow-sm'}`;
+        el.innerHTML = `
+          <div class="flex items-center gap-2.5 overflow-hidden">
+            <input type="checkbox" ${task.done ? 'checked' : ''} onchange="toggleTask('${task.id}')" class="check-box-ca flex-shrink-0">
+            <div class="truncate">
+              <span class="text-xs font-extrabold ${task.done ? 'line-through text-slate-400' : ''}">${task.text}</span>
+              <div class="flex items-center gap-1.5 mt-0.5">
+                <span class="text-[9px] font-black uppercase px-1.5 py-0.2 rounded bg-blue-100 text-blue-900 border border-blue-200">${task.paper}</span>
+                <span class="text-[9px] font-bold text-slate-500">${task.priority} Priority</span>
+              </div>
+            </div>
+          </div>
+          <button onclick="deleteTask('${task.id}')" class="text-slate-400 hover:text-red-600 p-1 text-xs">
+            <i class="fa-regular fa-trash-can"></i>
+          </button>
+        `;
+        container.appendChild(el);
+      });
+    }
+
+    function handleAddTask(e) {
       e.preventDefault();
-      const raw = e.dataTransfer.getData("application/json");
-      if (!raw) return;
-      const data = JSON.parse(raw);
-      weeklySchedule[day][slotLabel] = {
-        code: data.code,
-        planned: defaultHours,
-        actual: 0.0,
-        topic: "General Revision"
-      };
-      saveWeeklySchedule();
-    }
+      const input = document.getElementById('taskInput');
+      const paper = document.getElementById('taskPaper').value;
+      const priority = document.getElementById('taskPriority').value;
 
-    function selectSlot(day, slotLabel) {
-      activeSlot = { day, slot: slotLabel };
-      renderWeeklyGrid();
-    }
+      if (!input.value.trim()) return;
 
-    function editSlotPrompt(day, slotLabel) {
-      const item = weeklySchedule[day][slotLabel];
-      if (!item) return alert("Assign a subject module first by dragging it here.");
-      const act = prompt("Enter Actual Hours Studied (decimal):", item.actual || 0);
-      if (act === null) return;
-      const topic = prompt("Enter Topic / Standard Studied:", item.topic || "");
-      item.actual = parseFloat(act) || 0;
-      item.topic = topic || "General Revision";
-      saveWeeklySchedule();
-    }
-
-    function saveWeeklySchedule() {
-      localStorage.setItem("ca_weekly_vault", JSON.stringify(weeklySchedule));
-      renderWeeklyGrid();
-      refreshKPIs();
-    }
-
-    function refreshKPIs() {
-      let totPln = 0;
-      let totAct = 0;
-      WEEK_DAYS.forEach(d => {
-        WEEKLY_SLOTS.forEach(s => {
-          const item = weeklySchedule[d][s.label];
-          if (item) {
-            totPln += item.planned || s.hours;
-            totAct += item.actual || 0;
-          }
-        });
+      appState.tasks.unshift({
+        id: 'tk_' + Date.now(),
+        text: input.value.trim(),
+        paper: paper,
+        priority: priority,
+        done: false
       });
 
-      const variance = totAct - totPln;
-      const eff = totPln > 0 ? (totAct / totPln * 100) : 0;
-
-      document.getElementById("kpiPlanned").innerText = `${totPln.toFixed(1)} hrs`;
-      document.getElementById("kpiActual").innerText = `${totAct.toFixed(1)} hrs`;
-      document.getElementById("kpiVariance").innerText = `${variance >= 0 ? '+' : ''}${variance.toFixed(1)} hrs`;
-      document.getElementById("kpiEff").innerText = `${eff.toFixed(1)} %`;
+      input.value = '';
+      saveData();
+      renderTasks();
+      showToast('Target task added!');
     }
 
-    function toggleStopwatch() {
-      if (!timerRunning) {
-        if (!activeSlot || !weeklySchedule[activeSlot.day][activeSlot.slot]) {
-          return alert("Click on an assigned slot in the weekly matrix to bind your timer session.");
-        }
-        timerRunning = true;
-        document.getElementById("btnStopwatch").innerText = "⏹ Stop & Log";
-        document.getElementById("btnStopwatch").className = "px-3 py-1.5 text-xs font-bold rounded bg-rose-500 hover:bg-rose-400 text-white transition";
-        timerInterval = setInterval(() => {
-          timerSeconds++;
-          const h = Math.floor(timerSeconds / 3600);
-          const m = Math.floor((timerSeconds % 3600) / 60);
-          const s = timerSeconds % 60;
-          document.getElementById("stopwatchDisplay").innerText = 
-            `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-        }, 1000);
-      } else {
-        clearInterval(timerInterval);
-        timerRunning = false;
-        document.getElementById("btnStopwatch").innerText = "▶ Start Session";
-        document.getElementById("btnStopwatch").className = "px-3 py-1.5 text-xs font-bold rounded bg-sky-500 hover:bg-sky-400 text-slate-900 transition";
-        
-        const addedHours = Math.round((timerSeconds / 3600) * 100) / 100;
-        const item = weeklySchedule[activeSlot.day][activeSlot.slot];
-        if (item) {
-          item.actual = Math.round(((item.actual || 0) + addedHours) * 100) / 100;
-          saveWeeklySchedule();
-          alert(`Logged ${addedHours} hrs to ${item.code} on ${activeSlot.day}`);
-        }
-        timerSeconds = 0;
-        document.getElementById("stopwatchDisplay").innerText = "00:00:00";
+    function toggleTask(id) {
+      const t = appState.tasks.find(x => x.id === id);
+      if (t) {
+        t.done = !t.done;
+        saveData();
+        renderTasks();
       }
     }
 
-    // ----------------------------------------------------
-    // 4. DAY-WISE MULTI-SUBJECT LOGGER
-    // ----------------------------------------------------
-    let editingLogDate = null;
-
-    function setLogToday() {
-      document.getElementById("logDateInput").value = new Date().toISOString().slice(0, 10);
+    function deleteTask(id) {
+      appState.tasks = appState.tasks.filter(x => x.id !== id);
+      saveData();
+      renderTasks();
     }
 
-    function commitLogEntry() {
-      const dt = document.getElementById("logDateInput").value;
-      if (!dt) return alert("Select a date.");
+    // Syllabus Checklist Logic
+    function filterSyllabus(paper) {
+      activeSyllabusFilter = paper;
+      document.querySelectorAll('.syl-btn').forEach(btn => {
+        btn.className = 'syl-btn px-2.5 py-1 text-xs font-black rounded-xl bg-slate-100 text-slate-800 border border-slate-300';
+      });
+      document.getElementById(`sylFilter-${paper}`).className = 'syl-btn px-2.5 py-1 text-xs font-black rounded-xl bg-blue-700 text-white';
+      renderSyllabus();
+    }
 
-      const subs = ["FR", "AFM", "AUDIT", "TAX", "GST", "SETA", "SETB"];
-      let totalMins = 0;
-      const entryBreakdown = {};
+    function renderSyllabus() {
+      const container = document.getElementById('syllabusContainer');
+      container.innerHTML = '';
 
-      subs.forEach(s => {
-        const val = parseInt(document.getElementById(`in_${s}`).value) || 0;
-        entryBreakdown[s] = val;
-        totalMins += val;
+      const filtered = activeSyllabusFilter === 'All' 
+        ? appState.topics 
+        : appState.topics.filter(t => t.paper === activeSyllabusFilter);
+
+      let totalPoints = appState.topics.length * 5;
+      let earnedPoints = 0;
+
+      appState.topics.forEach(t => {
+        if (t.sm) earnedPoints++;
+        if (t.qb) earnedPoints++;
+        if (t.rtp) earnedPoints++;
+        if (t.r1) earnedPoints++;
+        if (t.r2) earnedPoints++;
       });
 
-      if (totalMins === 0) return alert("Log minutes for at least one subject.");
+      const overallPct = totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0;
+      document.getElementById('syllabusMasteryTotal').innerText = `${overallPct}% Mastered (${earnedPoints}/${totalPoints} checks)`;
 
-      // Check existing
-      const existingIdx = subjectLogs.findIndex(l => l.date === dt);
-      const record = { date: dt, totalMins, ...entryBreakdown };
-
-      if (existingIdx >= 0) {
-        subjectLogs[existingIdx] = record;
-      } else {
-        subjectLogs.push(record);
-      }
-
-      subjectLogs.sort((a, b) => b.date.localeCompare(a.date));
-      localStorage.setItem("ca_subject_logs", JSON.stringify(subjectLogs));
-
-      cancelLogEdit();
-      renderLogTable();
-    }
-
-    function renderLogTable() {
-      const tbody = document.getElementById("loggerTableBody");
-      tbody.innerHTML = "";
-
-      subjectLogs.forEach(entry => {
-        const hrs = Math.floor(entry.totalMins / 60);
-        const mins = entry.totalMins % 60;
-        const dec = (entry.totalMins / 60).toFixed(2);
-
-        const parts = ["FR", "AFM", "AUDIT", "TAX", "GST", "SETA", "SETB"]
-          .filter(s => entry[s] > 0)
-          .map(s => `${s}: ${entry[s]}m`);
-
-        const tr = document.createElement("tr");
-        tr.className = "hover:bg-slate-50 cursor-pointer";
-        tr.onclick = () => loadLogForEdit(entry.date);
-        tr.innerHTML = `
-          <td class="p-2.5 font-bold text-slate-800">${entry.date}</td>
-          <td class="p-2.5">${hrs}h ${mins}m (${dec}h)</td>
-          <td class="p-2.5">${entry.totalMins}</td>
-          <td class="p-2.5 text-slate-600">${parts.join(", ") || "-"}</td>
-          <td class="p-2.5 text-right"><button onclick="deleteLogEntry(event, '${entry.date}')" class="text-rose-600 font-bold hover:underline">Delete</button></td>
+      filtered.forEach(top => {
+        const card = document.createElement('div');
+        card.className = 'p-3 rounded-2xl border-2 border-slate-200 bg-white shadow-sm space-y-2';
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-slate-900 text-white">${top.paper}</span>
+              <span class="text-xs font-black text-slate-950">${top.name}</span>
+            </div>
+            <button onclick="deleteTopic('${top.id}')" class="text-slate-400 hover:text-red-600 text-xs">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+          <div class="grid grid-cols-5 gap-1 pt-1 text-center">
+            <label class="flex flex-col items-center gap-1 cursor-pointer">
+              <input type="checkbox" ${top.sm ? 'checked' : ''} onchange="toggleTopicCheck('${top.id}', 'sm')" class="check-box-ca">
+              <span class="text-[9px] font-black uppercase text-slate-700">ICAI SM</span>
+            </label>
+            <label class="flex flex-col items-center gap-1 cursor-pointer">
+              <input type="checkbox" ${top.qb ? 'checked' : ''} onchange="toggleTopicCheck('${top.id}', 'qb')" class="check-box-ca">
+              <span class="text-[9px] font-black uppercase text-slate-700">QB/PYQ</span>
+            </label>
+            <label class="flex flex-col items-center gap-1 cursor-pointer">
+              <input type="checkbox" ${top.rtp ? 'checked' : ''} onchange="toggleTopicCheck('${top.id}', 'rtp')" class="check-box-ca">
+              <span class="text-[9px] font-black uppercase text-slate-700">RTP/MTP</span>
+            </label>
+            <label class="flex flex-col items-center gap-1 cursor-pointer">
+              <input type="checkbox" ${top.r1 ? 'checked' : ''} onchange="toggleTopicCheck('${top.id}', 'r1')" class="check-box-ca">
+              <span class="text-[9px] font-black uppercase text-blue-900">Rev 1</span>
+            </label>
+            <label class="flex flex-col items-center gap-1 cursor-pointer">
+              <input type="checkbox" ${top.r2 ? 'checked' : ''} onchange="toggleTopicCheck('${top.id}', 'r2')" class="check-box-ca">
+              <span class="text-[9px] font-black uppercase text-emerald-900">Rev 2</span>
+            </label>
+          </div>
         `;
-        tbody.appendChild(tr);
+        container.appendChild(card);
       });
     }
 
-    function loadLogForEdit(dateStr) {
-      const entry = subjectLogs.find(l => l.date === dateStr);
-      if (!entry) return;
+    function toggleTopicCheck(id, prop) {
+      const top = appState.topics.find(t => t.id === id);
+      if (top) {
+        top[prop] = !top[prop];
+        saveData();
+        renderSyllabus();
+      }
+    }
 
-      editingLogDate = dateStr;
-      document.getElementById("logDateInput").value = entry.date;
-      ["FR", "AFM", "AUDIT", "TAX", "GST", "SETA", "SETB"].forEach(s => {
-        document.getElementById(`in_${s}`).value = entry[s] || "";
+    function saveNewTopic() {
+      const name = document.getElementById('newTopicName').value.trim();
+      const paper = document.getElementById('newTopicPaper').value;
+      if (!name) return;
+
+      appState.topics.push({
+        id: 'tp_' + Date.now(),
+        paper: paper,
+        name: name,
+        sm: false,
+        qb: false,
+        rtp: false,
+        r1: false,
+        r2: false
       });
 
-      document.getElementById("loggerModeTitle").innerText = `Editing Progress for ${dateStr}`;
-      document.getElementById("btnSaveLog").innerText = "SAVE EDITED CHANGES";
-      document.getElementById("btnCancelEdit").classList.remove("hidden");
+      document.getElementById('newTopicName').value = '';
+      saveData();
+      renderSyllabus();
+      toggleModal('chapterModal');
+      showToast('Topic added to matrix!');
     }
 
-    function cancelLogEdit() {
-      editingLogDate = null;
-      document.getElementById("loggerModeTitle").innerText = "Log Lecture Minutes by Subject";
-      document.getElementById("btnSaveLog").innerText = "COMMIT LOG ENTRY";
-      document.getElementById("btnCancelEdit").classList.add("hidden");
-      ["FR", "AFM", "AUDIT", "TAX", "GST", "SETA", "SETB"].forEach(s => {
-        document.getElementById(`in_${s}`).value = "";
+    function deleteTopic(id) {
+      appState.topics = appState.topics.filter(t => t.id !== id);
+      saveData();
+      renderSyllabus();
+      showToast('Topic deleted');
+    }
+
+    // Routine Logic
+    function renderRoutine() {
+      const container = document.getElementById('routineContainer');
+      container.innerHTML = '';
+
+      appState.routine.forEach(slot => {
+        const isExamSlot = slot.paper === 'Exam Slot';
+        const card = document.createElement('div');
+        card.className = `p-3 rounded-2xl border-2 flex items-start justify-between gap-2.5 ${isExamSlot ? 'bg-amber-100 border-amber-300' : 'bg-white border-slate-200'}`;
+        card.innerHTML = `
+          <div class="flex items-start gap-2.5">
+            <input type="checkbox" ${slot.done ? 'checked' : ''} onchange="toggleRoutineSlot('${slot.id}')" class="check-box-ca mt-0.5">
+            <div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-xs font-mono font-black ${isExamSlot ? 'text-amber-950 font-black' : 'text-blue-900'}">${slot.time}</span>
+                <span class="text-[9px] font-black uppercase px-1.5 py-0.2 rounded ${isExamSlot ? 'bg-amber-950 text-white' : 'bg-slate-100 text-slate-800 border border-slate-300'}">${slot.paper}</span>
+              </div>
+              <div class="text-xs font-extrabold text-slate-950 mt-0.5 ${slot.done ? 'line-through text-slate-400' : ''}">${slot.title}</div>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
       });
-      setLogToday();
     }
 
-    function deleteLogEntry(e, dateStr) {
-      e.stopPropagation();
-      if (!confirm(`Delete entry for ${dateStr}?`)) return;
-      subjectLogs = subjectLogs.filter(l => l.date !== dateStr);
-      localStorage.setItem("ca_subject_logs", JSON.stringify(subjectLogs));
-      renderLogTable();
+    function toggleRoutineSlot(id) {
+      const r = appState.routine.find(x => x.id === id);
+      if (r) {
+        r.done = !r.done;
+        saveData();
+        renderRoutine();
+      }
     }
 
-    // ----------------------------------------------------
-    // 5. FR 155-LECTURE TRACKER
-    // ----------------------------------------------------
-    let activeLectureId = null;
-
-    function renderFRTable() {
-      const filter = document.getElementById("frFilterSelect").value;
-      const tbody = document.getElementById("frTableBody");
-      tbody.innerHTML = "";
-
-      Object.keys(frData)
-        .sort((a, b) => parseInt(a) - parseInt(b))
-        .forEach(k => {
-          const item = frData[k];
-          if (filter !== "All" && item.group !== filter) return;
-
-          const tr = document.createElement("tr");
-          tr.className = `hover:bg-sky-50 cursor-pointer ${activeLectureId === k ? 'bg-sky-100' : ''}`;
-          tr.onclick = () => selectFRLecture(k);
-          tr.innerHTML = `
-            <td class="p-2 text-center font-bold text-slate-500">${item.num}</td>
-            <td class="p-2 font-semibold text-slate-800">${item.title}</td>
-            <td class="p-2 text-slate-500">${item.group}</td>
-            <td class="p-2 text-center">${item.watch_date || '-'}</td>
-            <td class="p-2 text-center">${item.watch_minutes > 0 ? item.watch_minutes + 'm' : '-'}</td>
-            <td class="p-2 text-center text-sky-600 font-bold">${item.watched ? '✔' : '-'}</td>
-            <td class="p-2 text-center text-amber-600 font-bold">${item.rev1 ? '★' : '-'}</td>
-            <td class="p-2 text-center text-orange-600 font-bold">${item.rev2 ? '★' : '-'}</td>
-            <td class="p-2 text-center text-emerald-600 font-bold">${item.rev3 ? '★' : '-'}</td>
-          `;
-          tbody.appendChild(tr);
-        });
+    function resetRoutineChecks() {
+      appState.routine.forEach(r => r.done = false);
+      saveData();
+      renderRoutine();
+      showToast('Routine checks reset for fresh day!');
     }
 
-    function selectFRLecture(id) {
-      activeLectureId = id;
-      const item = frData[id];
-      document.getElementById("frActiveTitle").innerText = `#${item.num} - ${item.title}`;
-      document.getElementById("frEntryDate").value = item.watch_date || "";
-      document.getElementById("frEntryMins").value = item.watch_minutes || "";
-      document.getElementById("frChkDone").checked = !!item.watched;
-      document.getElementById("frChkR1").checked = !!item.rev1;
-      document.getElementById("frChkR2").checked = !!item.rev2;
-      document.getElementById("frChkR3").checked = !!item.rev3;
-      document.getElementById("frEntryNotes").value = item.note || "";
-      renderFRTable();
-    }
+    // Mock Tests Logic
+    function renderMocks() {
+      const container = document.getElementById('mocksListContainer');
+      container.innerHTML = '';
 
-    function setFRToday() {
-      document.getElementById("frEntryDate").value = new Date().toISOString().slice(0, 10);
-    }
+      const count = appState.mocks.length;
+      document.getElementById('mockCountStat').innerText = count;
 
-    function saveActiveLecture() {
-      if (!activeLectureId) return alert("Select a lecture from the list first.");
-      const item = frData[activeLectureId];
-      const d = document.getElementById("frEntryDate").value;
-      const m = parseInt(document.getElementById("frEntryMins").value) || 0;
+      if (count === 0) {
+        document.getElementById('mockExemptionsStat').innerText = '0';
+        document.getElementById('mockAvgStat').innerText = '0/100';
+        container.innerHTML = `<div class="p-6 text-center text-xs font-bold text-slate-400">No mock tests logged yet. Track your test scores & exemptions!</div>`;
+        return;
+      }
 
-      item.watch_date = d;
-      item.watch_minutes = m;
-      item.watched = document.getElementById("frChkDone").checked || (d !== "" || m > 0);
-      item.rev1 = document.getElementById("frChkR1").checked;
-      item.rev2 = document.getElementById("frChkR2").checked;
-      item.rev3 = document.getElementById("frChkR3").checked;
-      item.note = document.getElementById("frEntryNotes").value.trim();
+      let totalMarks = 0;
+      let exemptions = 0;
 
-      localStorage.setItem("ca_fr_data", JSON.stringify(frData));
-      renderFRTable();
-      updateFRStats();
-      alert(`Updated Lecture #${item.num}`);
-    }
+      appState.mocks.forEach(m => {
+        totalMarks += m.marks;
+        if (m.marks >= 60) exemptions++;
 
-    function updateFRStats() {
-      const keys = Object.keys(frData);
-      const total = keys.length;
-      const watched = keys.filter(k => frData[k].watched).length;
-      const totalMins = keys.reduce((acc, k) => acc + (frData[k].watch_minutes || 0), 0);
-      const hrs = (totalMins / 60).toFixed(1);
-      const pct = total > 0 ? ((watched / total) * 100).toFixed(1) : 0;
+        const isPassed = m.marks >= 40;
+        const isExempt = m.marks >= 60;
 
-      document.getElementById("frSummaryStats").innerText = 
-        `Grand Total Time: ${hrs} hrs (${totalMins} mins) | Watched: ${watched}/${total} (${pct}%)`;
-    }
-
-    // ----------------------------------------------------
-    // 6. WORKLOAD QUOTA & EXPORTERS
-    // ----------------------------------------------------
-    function calculateQuota() {
-      const sStr = document.getElementById("quotaStart").value;
-      const eStr = document.getElementById("quotaEnd").value;
-      if (!sStr || !eStr) return alert("Set valid dates");
-
-      const start = new Date(sStr);
-      const end = new Date(eStr);
-      const diffDays = Math.round((end - start) / (1000 * 3600 * 24)) + 1;
-
-      if (diffDays <= 0) return alert("End date must be after Start date");
-
-      const tot = ["Audit", "AFM", "FR", "DT", "IDT"]
-        .map(sub => parseFloat(document.getElementById(`q_${sub}`).value) || 0)
-        .reduce((a, b) => a + b, 0);
-
-      const pace = (tot / diffDays).toFixed(2);
-      document.getElementById("quotaSummaryBox").innerHTML = 
-        `<strong>Total Workload:</strong> ${tot.toFixed(1)} hrs | <strong>Available Days:</strong> ${diffDays} | <strong>Required Pace:</strong> ${pace} hrs/day`;
-      document.getElementById("quotaSummaryBox").className = "p-3 rounded bg-emerald-50 border border-emerald-200 text-xs text-emerald-900";
-    }
-
-    function exportCSV() {
-      let csv = "Subject,Quota Hours\n";
-      ["Audit", "AFM", "FR", "DT", "IDT"].forEach(sub => {
-        csv += `${sub},${document.getElementById(`q_${sub}`).value}\n`;
-      });
-      csv += "\nDate,Total Mins,Breakdown\n";
-      subjectLogs.forEach(l => {
-        csv += `"${l.date}",${l.totalMins},"${JSON.stringify(l).replace(/"/g, '""')}"\n`;
+        const card = document.createElement('div');
+        card.className = 'p-3 rounded-2xl border-2 border-slate-200 bg-white space-y-1.5 shadow-sm';
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-black uppercase px-2 py-0.5 rounded-lg bg-blue-700 text-white">${m.paper}</span>
+              <span class="text-xs font-black text-slate-950">${m.name}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-black font-mono px-2 py-0.5 rounded-lg ${isExempt ? 'bg-emerald-100 text-emerald-950 border border-emerald-300' : isPassed ? 'bg-blue-100 text-blue-900 border border-blue-300' : 'bg-red-100 text-red-900 border border-red-300'}">
+                ${m.marks}/100 ${isExempt ? '★ EXEMPTION' : isPassed ? 'PASSED' : 'RETRY'}
+              </span>
+              <button onclick="deleteMock('${m.id}')" class="text-slate-400 hover:text-red-600 text-xs">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </div>
+          </div>
+          <div class="text-[11px] font-bold text-slate-700 bg-slate-50 p-2 rounded-xl border border-slate-200 italic">
+            ${m.notes || 'No mistake notes provided.'}
+          </div>
+        `;
+        container.appendChild(card);
       });
 
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "CA_Final_Study_Data.csv";
+      document.getElementById('mockExemptionsStat').innerText = exemptions;
+      document.getElementById('mockAvgStat').innerText = `${Math.round(totalMarks / count)}/100`;
+    }
+
+    function saveMockTest() {
+      const paper = document.getElementById('mockPaperInput').value;
+      const marks = parseInt(document.getElementById('mockMarksInput').value) || 0;
+      const name = document.getElementById('mockNameInput').value.trim() || 'Full Syllabus Mock';
+      const notes = document.getElementById('mockNotesInput').value.trim();
+
+      appState.mocks.unshift({
+        id: 'mk_' + Date.now(),
+        paper: paper,
+        marks: marks,
+        name: name,
+        notes: notes
+      });
+
+      saveData();
+      renderMocks();
+      toggleModal('mockModal');
+      document.getElementById('mockMarksInput').value = '';
+      document.getElementById('mockNameInput').value = '';
+      document.getElementById('mockNotesInput').value = '';
+      showToast('Mock test score recorded!');
+    }
+
+    function deleteMock(id) {
+      appState.mocks = appState.mocks.filter(m => m.id !== id);
+      saveData();
+      renderMocks();
+      showToast('Mock score deleted');
+    }
+
+    function renderStats() {
+      const selfHours = ((appState.selfStudyMinutesToday || 0) / 60).toFixed(1);
+      document.getElementById('statSelfHours').innerText = `${selfHours}h`;
+
+      const todayStr = new Date().toISOString().split('T')[0];
+      let todayLec = 0;
+      appState.lectures.forEach(l => {
+        if (l.date === todayStr) todayLec += l.hours;
+      });
+      document.getElementById('statLectureHours').innerText = `${todayLec.toFixed(1)}h`;
+
+      const combined = (parseFloat(selfHours) + todayLec).toFixed(1);
+      document.getElementById('statCombinedHours').innerText = `${combined}h`;
+    }
+
+    // Modal & Tab Handling
+    function toggleModal(modalId) {
+      const el = document.getElementById(modalId);
+      if (el.classList.contains('hidden')) {
+        el.classList.remove('hidden');
+        if (modalId === 'dateModal') {
+          document.getElementById('customExamDateInput').value = appState.targetExamDate.slice(0, 16);
+        }
+        if (modalId === 'lectureModal') {
+          document.getElementById('lecDate').value = new Date().toISOString().split('T')[0];
+        }
+      } else {
+        el.classList.add('hidden');
+      }
+    }
+
+    function switchTab(tab) {
+      document.getElementById('tab-today-view').classList.add('hidden');
+      document.getElementById('tab-lectures-view').classList.add('hidden');
+      document.getElementById('tab-syllabus-view').classList.add('hidden');
+      document.getElementById('tab-routine-view').classList.add('hidden');
+      document.getElementById('tab-mocks-view').classList.add('hidden');
+
+      document.querySelectorAll('.nav-tab-btn').forEach(btn => {
+        btn.className = 'nav-tab-btn py-1 px-1 rounded-xl text-slate-500 flex flex-col items-center';
+      });
+
+      document.getElementById(`tab-${tab}-view`).classList.remove('hidden');
+      document.getElementById(`tabBtn-${tab}`).className = 'nav-tab-btn py-1 px-1 rounded-xl text-blue-700 flex flex-col items-center font-black';
+
+      if (tab === 'lectures') renderLectures();
+      if (tab === 'syllabus') renderSyllabus();
+      if (tab === 'routine') renderRoutine();
+      if (tab === 'mocks') renderMocks();
+      if (tab === 'today') renderStats();
+    }
+
+    // JSON Backup / Restore
+    function exportData() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
+      const a = document.createElement('a');
+      a.setAttribute("href", dataStr);
+      a.setAttribute("download", `ca_final_planner_backup_${new Date().toISOString().split('T')[0]}.json`);
+      document.body.appendChild(a);
       a.click();
+      a.remove();
+      showToast('Backup downloaded successfully!');
     }
+
+    function importData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (imported && (imported.topics || imported.routine || imported.lectures)) {
+            appState = imported;
+            saveData();
+            init();
+            showToast('Backup restored successfully!');
+          }
+        } catch (err) {
+          showToast('Invalid JSON file!');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function confirmReset() {
+      if (localStorage.getItem('reset_pending') === '1') {
+        localStorage.removeItem('reset_pending');
+        localStorage.removeItem('ca_final_hub_v1');
+        appState.selfStudyMinutesToday = 0;
+        appState.tasks = [];
+        appState.lectures = [];
+        appState.mocks = [];
+        saveData();
+        init();
+        showToast('App reset to clean state!');
+      } else {
+        localStorage.setItem('reset_pending', '1');
+        showToast('Tap Reset again to confirm full reset.');
+        setTimeout(() => localStorage.removeItem('reset_pending'), 3000);
+      }
+    }
+
+    function init() {
+      loadData();
+      updateCountdown();
+      setInterval(updateCountdown, 1000);
+      renderTasks();
+      renderLectures();
+      renderSyllabus();
+      renderRoutine();
+      renderMocks();
+      renderStats();
+      updateTimerUI();
+    }
+
+    window.addEventListener('DOMContentLoaded', init);
   </script>
 </body>
 </html>
